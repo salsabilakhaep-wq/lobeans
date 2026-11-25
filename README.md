@@ -464,15 +464,22 @@ Seluruh parameter yang sering disesuaikan telah dipisahkan ke 4 file konfigurasi
 ## Cara Menjalankan Secara Lokal
 
 ### 1. Prasyarat
+- Git
 - Node.js 20+
 - PostgreSQL 15+ (serta pgAdmin 4 atau `psql`)
 
-### 2. Instalasi Dependensi
+### 2. Clone Repository
+```bash
+git clone https://github.com/salsabilakhaep-wq/lobeans.git
+cd lobeans
+```
+
+### 3. Instalasi Dependensi
 ```bash
 npm install
 ```
 
-### 3. Setup Basis Data PostgreSQL
+### 4. Setup Basis Data PostgreSQL
 Buat database baru bernama `lobeans_db` lalu jalankan **`src/database/schema.sql`** diikuti **`src/database/seed.sql`** melalui **pgAdmin 4** atau terminal `psql`:
 
 ```bash
@@ -485,10 +492,14 @@ psql -U postgres -d lobeans_db -f src/database/demo_dummy.sql
 
 Panduan langkah demi langkah menggunakan **pgAdmin 4** tersedia lengkap di [`src/database/README.md`](src/database/README.md).
 
-### 4. Konfigurasi Environment
+### 5. Konfigurasi Environment
 Salin `.env.example` menjadi `.env.local`, lalu sesuaikan kredensial PostgreSQL Anda:
 ```bash
+# macOS / Linux / Git Bash
 cp .env.example .env.local
+
+# Windows (CMD / PowerShell)
+copy .env.example .env.local
 ```
 
 Isi minimal `.env.local`:
@@ -499,7 +510,7 @@ COOKIE_SECURE=false
 APP_TZ=Asia/Makassar
 ```
 
-### 5. Jalankan Server Pengembangan
+### 6. Jalankan Server Pengembangan
 ```bash
 npm run dev
 ```
