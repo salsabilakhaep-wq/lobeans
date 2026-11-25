@@ -1,4 +1,29 @@
-# LOBEANS — Smart Inventory, Better Coffee.
+<div align="center">
+  <img src="public/logo-mark.svg" alt="Logo LOBEANS" width="88" height="88" />
+  <h1>LOBEANS</h1>
+  <p><strong>Smart Inventory, Better Coffee.</strong></p>
+  <p><em>Coffee Inventory &amp; Warehouse Management System untuk Biji Kopi Mentah (Green Bean) Nusantara</em></p>
+</div>
+
+---
+
+## Navigasi Isi
+
+Gunakan daftar isi berikut untuk langsung menuju bagian yang dibutuhkan:
+
+| No | Bagian | Ringkasan Isi |
+| :---: | :--- | :--- |
+| 1 | [Tentang LOBEANS](#tentang-lobeans) | Gambaran umum aplikasi, latar belakang bisnis, dan tujuan sistem |
+| 2 | [Fitur Utama](#fitur-utama) | Daftar fitur inti, keamanan autentikasi, dan aturan stok atomik |
+| 3 | [Use Case Diagram](#use-case-diagram) | Diagram UML Use Case (Mermaid) & matriks aktivitas 5 aktor sistem |
+| 4 | [Entity Relationship Diagram](#entity-relationship-diagram) | Diagram ERD lengkap 17 tabel PostgreSQL + view `v_products` |
+| 5 | [Konfigurasi Parameter Terpusat](#konfigurasi-parameter-terpusat) | Pusat file konfigurasi untuk mengubah tampilan, animasi, dan aturan sistem |
+| 6 | [Teknologi](#teknologi) | Stack teknologi frontend, backend, database, dan keamanan |
+| 7 | [Cara Menjalankan Secara Lokal](#cara-menjalankan-secara-lokal) | Langkah instalasi, setup PostgreSQL, `.env.local`, dan menjalankan server |
+| 8 | [Akun Demo](#akun-demo) | Kredensial akun uji untuk Admin, Manager, Staff, dan Supplier |
+| 9 | [Struktur Proyek](#struktur-proyek) | Susunan folder `database/`, `public/`, dan `src/` |
+
+---
 
 ## Tentang LOBEANS
 
@@ -19,6 +44,7 @@ Dalam bisnis kopi, kualitas seduhan sangat bergantung pada kesegaran biji, kesta
 - **Autentikasi & Keamanan Berstandar Industri**
   - Enkripsi kata sandi menggunakan `bcryptjs` saat registrasi, pembuatan akun, ubah kata sandi, dan verifikasi login.
   - Sesi berbasis `HttpOnly` JWT cookie (`jose`) dengan proteksi rute & pembatasan peran langsung di server melalui Next.js `src/middleware.js` (tanpa query database di middleware).
+  - Seluruh query PostgreSQL menggunakan **Parameterized Query (`$1, $2, ...`)**, proteksi autentikasi file `/uploads`, validasi *magic bytes* gambar, proteksi *Open Redirect*, dan proteksi *CSV Formula Injection*.
 - **4 Peran Pengguna (Role-Based Access Control)**
   - **Admin**: Tambah pengguna baru (**Staff Gudang**, **Manager Gudang**, dan **Supplier**), verifikasi mitra supplier pendaftar mandiri, kelola katalog produk & kategori kopi, serta pantau laporan audit.
   - **Manager Gudang**: Kelola produk & kategori (dengan alert pop-up proteksi penghapusan item berstok), buat *Restock Order (PO)* ke supplier, instruksikan pemeriksaan fisik, konfirmasi transaksi **Barang Masuk (`IN`)** & **Barang Keluar (`OUT`)** secara terpisah, serta tangani retur/klaim refund.
@@ -33,7 +59,110 @@ Dalam bisnis kopi, kualitas seduhan sangat bergantung pada kesegaran biji, kesta
 
 ---
 
-## Entity Relationship Diagram (ERD) Database
+## Use Case Diagram
+
+Diagram berikut menggambarkan seluruh interaksi antara **5 aktor** (*Guest*, *Admin*, *Manager Gudang*, *Staff Gudang*, dan *Supplier*) dengan fitur-fitur utama pada sistem **LOBEANS**.
+
+```mermaid
+flowchart LR
+    %% Daftar Aktor
+    GUEST(["👤 Guest / Pengunjung"])
+    ADMIN(["👤 Admin"])
+    MANAGER(["👤 Manager Gudang"])
+    STAFF(["👤 Staff Gudang"])
+    SUPPLIER(["👤 Supplier"])
+
+    %% Batas Sistem LOBEANS
+    subgraph SYSTEM["Sistem LOBEANS — Coffee Inventory & Warehouse Management"]
+        direction TB
+
+        subgraph AUTH["Akses & Autentikasi"]
+            UC1(["Lihat Landing Page & Profil Origin"])
+            UC2(["Daftar Akun Mitra Supplier"])
+            UC3(["Login & Logout JWT Session"])
+            UC4(["Lihat Dashboard & Notifikasi"])
+        end
+
+        subgraph MASTER["Manajemen Akun & Master Data"]
+            UC5(["Kelola & Tambah Akun User"])
+            UC6(["Verifikasi Pendaftaran Supplier"])
+            UC7(["Kelola Kategori Kopi"])
+            UC8(["Kelola Katalog Produk & Barcode SKU"])
+            UC9(["Kelola Akun & Ubah Password Supplier"])
+        end
+
+        subgraph SUPPLY["Pengadaan & Pemeriksaan Fisik"]
+            UC10(["Buat & Kelola Restock Order PO"])
+            UC11(["Konfirmasi / Tolak PO"])
+            UC12(["Kirim Barang & Unggah Bukti In Transit / Arrived"])
+            UC13(["Instruksikan Pemeriksaan Fisik"])
+            UC14(["Lakukan Pemeriksaan Fisik & Unggah Foto"])
+            UC15(["Tolak Penerimaan / Retur & Klaim Refund"])
+        end
+
+        subgraph TRX["Transaksi Stok & Pelaporan"]
+            UC16(["Ajukan Transaksi Barang Masuk IN"])
+            UC17(["Buat / Edit Transaksi Barang Keluar OUT"])
+            UC18(["Setujui / Tolak Transaksi IN & OUT"])
+            UC19(["Konfirmasi Kirim Barang Keluar Shipped"])
+            UC20(["Lihat Laporan, Audit Log & Ekspor CSV"])
+        end
+    end
+
+    %% Relasi Guest
+    GUEST --> UC1
+    GUEST --> UC2
+    GUEST --> UC3
+
+    %% Relasi Admin
+    ADMIN --> UC3
+    ADMIN --> UC4
+    ADMIN --> UC5
+    ADMIN --> UC6
+    ADMIN --> UC7
+    ADMIN --> UC8
+    ADMIN --> UC20
+
+    %% Relasi Manager Gudang
+    MANAGER --> UC3
+    MANAGER --> UC4
+    MANAGER --> UC7
+    MANAGER --> UC8
+    MANAGER --> UC10
+    MANAGER --> UC13
+    MANAGER --> UC15
+    MANAGER --> UC18
+    MANAGER --> UC20
+
+    %% Relasi Staff Gudang
+    STAFF --> UC3
+    STAFF --> UC4
+    STAFF --> UC14
+    STAFF --> UC16
+    STAFF --> UC17
+    STAFF --> UC19
+
+    %% Relasi Supplier
+    SUPPLIER --> UC3
+    SUPPLIER --> UC4
+    SUPPLIER --> UC9
+    SUPPLIER --> UC11
+    SUPPLIER --> UC12
+```
+
+### Matriks Use Case per Aktor
+
+| Aktor | Use Case Utama | Rute Utama |
+| :--- | :--- | :--- |
+| **Guest / Pengunjung** | Melihat landing page bisnis & origin kopi Nusantara, mendaftar sebagai mitra supplier baru (dengan dokumen legalitas), dan login ke sistem. | `/`, `/register`, `/login` |
+| **Admin** | Menambah akun Staff/Manager/Supplier, mengaktifkan/menonaktifkan akun, menyetujui/menolak pendaftaran supplier baru, mengelola kategori & produk kopi, memantau laporan & audit trail, serta ekspor CSV. | `/dashboard`, `/users`, `/suppliers`, `/products`, `/categories`, `/reports` |
+| **Manager Gudang** | Mengelola kategori & produk kopi, membuat *Restock Order (PO)* ke supplier, menginstruksikan pemeriksaan fisik ke staff, menyetujui/menolak transaksi `IN` (menambah stok atomik) & `OUT`, memproses retur/refund barang tidak sesuai, serta ekspor CSV laporan. | `/dashboard`, `/supply-orders`, `/transactions/in`, `/transactions/out`, `/products`, `/categories`, `/reports` |
+| **Staff Gudang** | Melakukan pemeriksaan fisik barang tiba beserta foto bukti wajib, mengajukan transaksi Barang Masuk (`IN`) dari hasil inspeksi *Sesuai*, membuat/mengedit transaksi Barang Keluar (`OUT`) berstatus *Pending*, dan menyelesaikan pengiriman (`Shipped`, mengurangi stok atomik). | `/dashboard`, `/inspections`, `/transactions/in`, `/transactions/out`, `/products` |
+| **Supplier** | Melihat & mengonfirmasi/menolak PO dari Manager, mengirim barang (`In Transit`) & melaporkan kedatangan (`Arrived`) beserta foto bukti wajib, memantau status pengiriman & klaim retur, serta memperbarui profil usaha dan kata sandi mandiri. | `/dashboard`, `/supply-orders`, `/shipments`, `/account` |
+
+---
+
+## Entity Relationship Diagram
 
 Basis data **LOBEANS** dibangun di atas **PostgreSQL** dengan **17 tabel relasional** dan **1 view otomatis (`v_products`)** sebagaimana didefinisikan di [`database/schema.sql`](database/schema.sql).
 
@@ -287,6 +416,19 @@ erDiagram
 
 ---
 
+## Konfigurasi Parameter Terpusat
+
+Seluruh parameter yang sering disesuaikan telah dipisahkan ke 4 file konfigurasi agar mudah diedit tanpa membongkar banyak komponen:
+
+| File Konfigurasi | Parameter yang Diatur |
+| :--- | :--- |
+| [`src/lib/landingConfig.js`](src/lib/landingConfig.js) | Konten teks & gambar Landing Page, menu navbar, batas scroll mengecil (`shrinkScrollY`), durasi smooth scroll **Lenis**, parallax/reveal **GSAP**, pegas **Motion**, dan link footer. |
+| [`src/lib/appConfig.js`](src/lib/appConfig.js) | Durasi sesi login, minimal panjang password, batas ukuran & ekstensi upload, jumlah produk per halaman, batas baris laporan, prefix kode supplier (`SUP-`), dan toggle keamanan. |
+| [`src/lib/constants.js`](src/lib/constants.js) | Label peran (`ROLE_LABEL`), daftar menu sidebar per role (`NAV`), metode proses kopi, satuan produk, dan status stok/transaksi. |
+| [`src/middleware.js`](src/middleware.js) | Daftar rute publik (`PUBLIC_PATHS`), rute privat (`PRIVATE_PREFIXES`), dan aturan pembatasan akses per role (`ROLE_RULES`). |
+
+---
+
 ## Teknologi
 
 - **Framework**: Next.js 16 (App Router) & React 19
@@ -366,15 +508,21 @@ Setelah menjalankan `database/seed.sql`, gunakan akun berikut untuk pengujian ti
 │   ├── schema.sql           # Struktur 17 tabel, indeks, & view v_products
 │   ├── seed.sql             # Data awal & akun demo ter-hash bcryptjs
 │   └── README.md            # Panduan setup PostgreSQL (pgAdmin 4 / psql) & akun demo
-├── public/                  # Aset statis (logo, latar hero, ilustrasi kategori)
+├── public/                  # Aset statis (logo-mark.svg, latar hero, ilustrasi kategori)
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/          # Halaman Login & Registrasi Supplier
 │   │   ├── (app)/           # Halaman private (Dashboard, Akun Supplier, Pengguna, Produk, Kategori, PO, Pengiriman, Inspeksi, Transaksi, Laporan)
 │   │   ├── actions/         # Next.js Server Actions
-│   │   └── api/             # Route ekspor CSV laporan
+│   │   ├── api/             # Route ekspor CSV laporan
+│   │   └── uploads/         # Route file upload terproteksi autentikasi
 │   ├── components/          # Komponen UI reusable, landing page, form, workflow, & modal alert
-│   ├── lib/                 # DB pool, autentikasi JWT, validasi Zod, audit log, services
+│   ├── lib/
+│   │   ├── appConfig.js     # Pusat parameter konfigurasi aplikasi internal & keamanan
+│   │   ├── landingConfig.js # Pusat parameter konten, navigasi, & animasi Landing Page
+│   │   ├── constants.js     # Label role, menu sidebar, status, & metode proses kopi
+│   │   ├── services/        # Logika bisnis transaksi atomik (supply & transactions)
+│   │   └── ...              # DB pool, JWT session, Zod validation, CSV, upload, audit log
 │   └── middleware.js        # Next.js Middleware proteksi route & role
 ├── eslint.config.mjs        # Konfigurasi ESLint (eslint-config-next)
 └── package.json
