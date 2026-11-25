@@ -31,31 +31,36 @@ Aplikasi **Warehouse & Coffee Inventory Management System** berbasis **Next.js (
 
 ### 1. Prasyarat
 - Node.js 20+
-- PostgreSQL 15+
+- PostgreSQL 15+ (serta pgAdmin 4 atau `psql`)
 
 ### 2. Instalasi Dependensi
 ```bash
 npm install
 ```
 
-### 3. Konfigurasi Environment
-Salin `.env.example` menjadi `.env.local`, lalu sesuaikan kredensial PostgreSQL dan secret key Anda:
+### 3. Setup Basis Data PostgreSQL
+Buat database baru bernama `lobeans_db` lalu jalankan **`database/schema.sql`** diikuti **`database/seed.sql`** melalui **pgAdmin 4** atau terminal `psql`:
+
+```bash
+psql -U postgres -c "CREATE DATABASE lobeans_db;"
+psql -U postgres -d lobeans_db -f database/schema.sql
+psql -U postgres -d lobeans_db -f database/seed.sql
+```
+
+Panduan langkah demi langkah menggunakan **pgAdmin 4** tersedia lengkap di [`database/README.md`](database/README.md).
+
+### 4. Konfigurasi Environment
+Salin `.env.example` menjadi `.env.local`, lalu sesuaikan kredensial PostgreSQL Anda:
 ```bash
 cp .env.example .env.local
 ```
 
 Isi minimal `.env.local`:
 ```env
-DATABASE_URL=postgres://postgres:PASSWORD_ANDA@localhost:5432/lobeans_db
-AUTH_SECRET=isi-dengan-secret-acak-minimal-32-karakter
+DATABASE_URL=postgres://postgres:PASSWORD_POSTGRES_ANDA@localhost:5432/lobeans_db
+AUTH_SECRET=lobeans-dev-secret-key-32chars-minimum-ok
 COOKIE_SECURE=false
 APP_TZ=Asia/Makassar
-```
-
-### 4. Inisialisasi Database (Schema + Seed)
-Jalankan perintah berikut untuk membuat database `lobeans_db`, menerapkan `database/schema.sql`, dan mengisi data awal dari `database/seed.sql`:
-```bash
-npm run db:reset
 ```
 
 ### 5. Jalankan Server Pengembangan
@@ -63,6 +68,19 @@ npm run db:reset
 npm run dev
 ```
 Buka `http://localhost:3000` di browser Anda.
+
+## Akun Demo
+
+Setelah menjalankan `database/seed.sql`, gunakan akun berikut untuk pengujian tiap peran:
+
+| Peran (Role) | Nama | Email | Password | Status |
+|---|---|---|---|---|
+| **Admin** | Nadia Putri | `admin@lobeans.test` | `Admin123!` | Aktif |
+| **Manager Gudang** | Andi Pratama | `manager@lobeans.test` | `Manager123!` | Aktif |
+| **Staff Gudang** | Rizky Saputra | `staff@lobeans.test` | `Staff123!` | Aktif |
+| **Supplier 1** | Hendra Kusuma | `supplier1@lobeans.test` | `Supplier123!` | Aktif |
+| **Supplier 2** | Taufik Hidayat | `supplier2@lobeans.test` | `Supplier123!` | Aktif |
+| **Supplier 3** | Made Wirawan | `supplier3@lobeans.test` | `Supplier123!` | Pending Verifikasi Admin |
 
 ## Struktur Proyek
 
@@ -75,8 +93,8 @@ Buka `http://localhost:3000` di browser Anda.
 ├── components/          # Komponen UI reusable, form, workflow, & modal alert
 ├── database/
 │   ├── schema.sql       # Struktur 17 tabel, indeks, & view v_products
-│   ├── seed.sql         # Data awal & akun ter-hash bcryptjs
-│   └── migrate.mjs      # Script migrasi otomatis (npm run db:reset)
+│   ├── seed.sql         # Data awal & akun demo ter-hash bcryptjs
+│   └── README.md        # Panduan setup PostgreSQL (pgAdmin 4 / psql) & akun demo
 ├── lib/                 # DB pool, autentikasi JWT, validasi Zod, audit log, services
 ├── public/              # Aset statis (logo, ilustrasi kategori, placeholder)
 └── middleware.js        # Next.js Middleware proteksi route & role
