@@ -3,42 +3,43 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { LANDING_MOTION_CONFIG, LANDING_NAV_CONFIG } from '@/lib/landingConfig.js';
 import { Icon } from './icons.js';
 
-const NAV_ITEMS = [
-  { id: 'home', label: 'Home', href: '#home' },
-  { id: 'about', label: 'About', href: '#about' },
-  { id: 'features', label: 'Features', href: '#features' },
-  { id: 'process', label: 'Process', href: '#process' },
-  { id: 'origin', label: 'Origin', href: '#origin' },
-];
-
+/**
+ * Navbar Kapsul Transparan ala iOS Dynamic Island.
+ * Menu, batas scroll pengecilan, dan animasi spring diatur melalui `src/lib/landingConfig.js`.
+ */
 export function LandingNavbar({ isLoggedIn = false }) {
+  const { items: navItems, shrinkScrollY, bottomOriginThreshold, logoSrc, brandName, ctaGuestLabel, ctaAuthLabel } =
+    LANDING_NAV_CONFIG;
+  const { ease, spring } = LANDING_MOTION_CONFIG.motion;
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeId, setActiveId] = useState('home');
+  const [activeId, setActiveId] = useState(navItems[0]?.id || 'home');
 
   useEffect(() => {
     const updateScrollState = () => {
       const y = window.scrollY;
-      const nextScrolled = y > 72;
+      const nextScrolled = y > shrinkScrollY;
       setIsScrolled(nextScrolled);
       if (nextScrolled) setMobileOpen(false);
 
-      // Scroll-spy akurat untuk seluruh 5 seksi termasuk Origin (seksi terakhir)
+      // Scroll-spy: aktifkan menu terakhir jika sudah di bagian bawah halaman
       const docHeight = document.documentElement.scrollHeight;
-      if (y + window.innerHeight >= docHeight - 140) {
-        setActiveId('origin');
+      if (y + window.innerHeight >= docHeight - bottomOriginThreshold) {
+        setActiveId(navItems[navItems.length - 1].id);
         return;
       }
 
+      // Cari seksi terakhir yang bagian atasnya sudah melewati titik baca layar
       const probe = y + Math.min(260, window.innerHeight * 0.35);
-      let current = 'home';
-      for (const item of NAV_ITEMS) {
+      let current = navItems[0].id;
+      for (const item of navItems) {
         const el = document.getElementById(item.id);
-        if (!el) continue;
-        if (el.offsetTop <= probe) {
+        if (el && el.offsetTop <= probe) {
           current = item.id;
         }
       }
@@ -52,8 +53,9 @@ export function LandingNavbar({ isLoggedIn = false }) {
       window.removeEventListener('scroll', updateScrollState);
       window.removeEventListener('resize', updateScrollState);
     };
-  }, []);
+  }, [navItems, shrinkScrollY, bottomOriginThreshold]);
 
+  // Mode ringkas: aktif saat di-scroll ke bawah dan tidak sedang di-hover / dibuka
   const isCompact = isScrolled && !isHovered && !mobileOpen;
 
   return (
@@ -61,8 +63,8 @@ export function LandingNavbar({ isLoggedIn = false }) {
       <motion.nav
         initial={{ opacity: 0, y: -14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-        aria-label="Navigasi utama LOBEANS"
+        transition={{ duration: 0.65, ease }}
+        aria-label={`Navigasi utama ${brandName}`}
         onMouseEnter={() => {
           if (isScrolled) setIsHovered(true);
         }}
@@ -71,7 +73,7 @@ export function LandingNavbar({ isLoggedIn = false }) {
           isScrolled ? 'bg-[#13291f]/70' : 'bg-[#13291f]/46'
         } ${isCompact ? 'gap-2 px-3.5 py-2' : 'gap-2 px-2.5 py-2 sm:gap-3 sm:px-3'}`}
       >
-        {/* Logo LOBEANS (inti kapsul saat mengecil) */}
+        {/* Logo LOBEANS (tetap tampil saat kapsul mengecil) */}
         <a
           href="#home"
           onClick={(e) => {
@@ -82,13 +84,13 @@ export function LandingNavbar({ isLoggedIn = false }) {
               setActiveId('home');
             }
           }}
-          aria-label="LOBEANS — Kembali ke atas"
+          aria-label={`${brandName} — Kembali ke atas`}
           className="flex shrink-0 items-center gap-2 rounded-full px-1.5 py-0.5 transition-transform duration-300 active:scale-95"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo-mark.svg"
-            alt="Logo LOBEANS"
+            src={logoSrc}
+            alt={`Logo ${brandName}`}
             width={30}
             height={30}
             className="h-[30px] w-[30px] shrink-0 rounded-full ring-1 ring-white/20"
@@ -98,12 +100,12 @@ export function LandingNavbar({ isLoggedIn = false }) {
               isCompact ? 'max-w-[120px] pr-1 text-[13.5px] opacity-100' : 'max-w-[120px] text-[13px] opacity-100 md:max-w-0 md:opacity-0'
             }`}
           >
-            LOBEANS
+            {brandName}
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-lobeans-mustard" />
           </span>
         </a>
 
-        {/* Menu Navigasi Desktop — semua tombol (Home..Origin) responsif hover & active */}
+        {/* Menu Navigasi Desktop */}
         <div
           aria-hidden={isCompact}
           className={`hidden items-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex ${
@@ -112,7 +114,7 @@ export function LandingNavbar({ isLoggedIn = false }) {
               : 'max-w-[580px] scale-100 gap-1 opacity-100'
           }`}
         >
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = activeId === item.id;
             return (
               <a
@@ -129,7 +131,7 @@ export function LandingNavbar({ isLoggedIn = false }) {
                 {active && (
                   <motion.span
                     layoutId="lobeans-nav-pill"
-                    transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                    transition={spring}
                     className="pointer-events-none absolute inset-0 z-0 rounded-full bg-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.26)]"
                   />
                 )}
@@ -153,7 +155,7 @@ export function LandingNavbar({ isLoggedIn = false }) {
             tabIndex={isCompact ? -1 : 0}
             className="inline-flex h-[34px] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-white/92 px-4 text-[12.5px] font-medium text-lobeans-forest shadow-xs backdrop-blur-md transition-all duration-200 hover:bg-lobeans-mustard hover:text-lobeans-forest active:scale-[0.97]"
           >
-            {isLoggedIn ? 'Dashboard' : 'Sign in'}
+            {isLoggedIn ? ctaAuthLabel : ctaGuestLabel}
           </Link>
         </div>
 
@@ -171,18 +173,18 @@ export function LandingNavbar({ isLoggedIn = false }) {
         </button>
       </motion.nav>
 
-      {/* Dropdown Glass iOS untuk Mobile dengan Motion */}
+      {/* Dropdown Glass Mobile */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, y: -10, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.25, ease }}
             className="pointer-events-auto mt-2.5 w-full max-w-[320px] rounded-[24px] border border-white/22 bg-[#13291f]/74 p-3 text-white shadow-2xl backdrop-blur-2xl backdrop-saturate-150 md:hidden"
           >
             <div className="flex flex-col gap-1">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const active = activeId === item.id;
                 return (
                   <a
@@ -207,7 +209,7 @@ export function LandingNavbar({ isLoggedIn = false }) {
                 onClick={() => setMobileOpen(false)}
                 className="flex h-[40px] w-full items-center justify-center rounded-full bg-white/92 text-[13px] font-medium text-lobeans-forest transition-colors hover:bg-lobeans-mustard"
               >
-                {isLoggedIn ? 'Buka Dashboard' : 'Masuk ke LOBEANS'}
+                {isLoggedIn ? `Buka ${ctaAuthLabel}` : `Masuk ke ${brandName}`}
               </Link>
             </div>
           </motion.div>

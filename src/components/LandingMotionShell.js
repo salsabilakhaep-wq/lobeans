@@ -4,9 +4,14 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
+import { LANDING_MOTION_CONFIG } from '@/lib/landingConfig.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
+/**
+ * Pembungkus animasi scroll Landing Page (Lenis + GSAP ScrollTrigger).
+ * Seluruh angka durasi, offset, dan kekuatan parallax diatur di `src/lib/landingConfig.js`.
+ */
 export function LandingMotionShell({ children }) {
   const rootRef = useRef(null);
 
@@ -14,25 +19,26 @@ export function LandingMotionShell({ children }) {
     const root = rootRef.current;
     if (!root) return;
 
+    // Hormati pengaturan aksesibilitas sistem pengguna (kurangi gerakan)
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reducedMotion) return;
 
-    // 1. Lenis Smooth Scroll tersinkronisasi penuh dengan GSAP ScrollTrigger
+    const { lenis: lenisCfg, gsap: gsapCfg } = LANDING_MOTION_CONFIG;
+
+    // 1. Inisialisasi Lenis (smooth scroll) & sinkronisasi ke ticker GSAP
     const lenis = new Lenis({
-      duration: 1.15,
+      duration: lenisCfg.duration,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      touchMultiplier: 1.4,
+      touchMultiplier: lenisCfg.touchMultiplier,
     });
 
     lenis.on('scroll', ScrollTrigger.update);
-    const onTick = (time) => {
-      lenis.raf(time * 1000);
-    };
+    const onTick = (time) => lenis.raf(time * 1000);
     gsap.ticker.add(onTick);
     gsap.ticker.lagSmoothing(0);
 
-    // Smooth anchor navigation via Lenis
+    // 2. Tangkap klik link anchor (#home..#origin) agar digulir halus oleh Lenis
     const onAnchorClick = (e) => {
       const anchor = e.target.closest?.('a[href^="#"]');
       if (!anchor) return;
@@ -41,79 +47,69 @@ export function LandingMotionShell({ children }) {
       const target = document.querySelector(id);
       if (!target) return;
       e.preventDefault();
-      lenis.scrollTo(target, { offset: -72, duration: 1.15 });
+      lenis.scrollTo(target, { offset: lenisCfg.anchorOffset, duration: lenisCfg.anchorDuration });
     };
     root.addEventListener('click', onAnchorClick);
 
-    // 2. GSAP ScrollTrigger Animations (parallax hero, editorial reveal, stagger, watermark)
+    // 3. Animasi GSAP ScrollTrigger berbasis atribut data-*
     const ctx = gsap.context(() => {
+      // Parallax latar foto Hero
       const heroBg = root.querySelector('[data-gsap-hero-bg]');
       if (heroBg) {
         gsap.to(heroBg, {
-          yPercent: 14,
-          scale: 1.07,
+          yPercent: gsapCfg.heroParallaxY,
+          scale: gsapCfg.heroParallaxScale,
           ease: 'none',
           scrollTrigger: {
             trigger: '#home',
             start: 'top top',
             end: 'bottom top',
-            scrub: 0.7,
+            scrub: gsapCfg.heroScrub,
           },
         });
       }
 
-      const heroDevices = root.querySelector('[data-gsap-hero-devices]');
-      if (heroDevices) {
-        gsap.to(heroDevices, {
-          y: -26,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '#home',
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 0.9,
-          },
-        });
-      }
-
+      // Kemunculan blok konten saat masuk layar
       gsap.utils.toArray('[data-gsap-reveal]').forEach((el) => {
         gsap.from(el, {
-          y: 28,
+          y: gsapCfg.revealOffsetY,
           opacity: 0,
-          duration: 0.85,
+          duration: gsapCfg.revealDuration,
           ease: 'power3.out',
           clearProps: 'transform,opacity',
           scrollTrigger: {
             trigger: el,
-            start: 'top 86%',
+            start: gsapCfg.revealStart,
             once: true,
           },
         });
       });
 
+      // Kemunculan item grid/daftar secara bergantian (stagger)
       gsap.utils.toArray('[data-gsap-stagger]').forEach((group) => {
         const items = group.querySelectorAll('[data-gsap-item]');
         if (!items.length) return;
         gsap.from(items, {
-          y: 26,
+          y: gsapCfg.revealOffsetY,
           opacity: 0,
-          duration: 0.75,
-          stagger: 0.08,
+          duration: gsapCfg.staggerDuration,
+          stagger: gsapCfg.staggerDelay,
           ease: 'power3.out',
           clearProps: 'transform,opacity',
           scrollTrigger: {
             trigger: group,
-            start: 'top 85%',
+            start: gsapCfg.revealStart,
             once: true,
           },
         });
       });
 
+      // Gerak halus watermark "LOBEANS" di bawah footer
       const watermark = root.querySelector('[data-gsap-watermark]');
       if (watermark) {
         gsap.fromTo(
           watermark,
-          { yPercent: 24, opacity: 0.25 },
+          { yPercent: gsapCfg.watermarkOffsetY, opacity: 0.25 },
           {
             yPercent: 0,
             opacity: 1,
@@ -129,6 +125,7 @@ export function LandingMotionShell({ children }) {
       }
     }, root);
 
+    // 4. Bersihkan seluruh listener & instance saat keluar dari halaman
     return () => {
       root.removeEventListener('click', onAnchorClick);
       ctx.revert();
@@ -138,7 +135,10 @@ export function LandingMotionShell({ children }) {
   }, []);
 
   return (
-    <div ref={rootRef} className="min-h-screen overflow-x-clip bg-lobeans-cream-light text-lobeans-ink selection:bg-lobeans-mustard/30 selection:text-lobeans-forest">
+    <div
+      ref={rootRef}
+      className="min-h-screen overflow-x-clip bg-lobeans-cream-light text-lobeans-ink selection:bg-lobeans-mustard/30 selection:text-lobeans-forest"
+    >
       {children}
     </div>
   );
