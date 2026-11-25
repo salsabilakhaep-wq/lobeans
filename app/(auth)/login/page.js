@@ -93,11 +93,16 @@ function LoginCard() {
         </button>
       </form>
 
-      <div className="border-t border-[#eeede6] pt-5 text-center">
+      <div className="space-y-2.5 border-t border-[#eeede6] pt-5 text-center">
         <p className="text-[12.5px] text-lobeans-muted">
           Belum memiliki akun supplier?{' '}
           <Link href="/register" className="font-bold text-[#284c35] hover:underline">
             Daftar sekarang
+          </Link>
+        </p>
+        <p className="text-[12px]">
+          <Link href="/" className="font-semibold text-lobeans-muted transition-colors hover:text-lobeans-forest hover:underline">
+            ← Kembali ke Beranda LOBEANS
           </Link>
         </p>
       </div>
@@ -107,43 +112,54 @@ function LoginCard() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-lobeans-mustard-frame p-4 sm:p-6 lg:p-8">
-      <div className="flex min-h-[600px] w-full max-w-[1375px] flex-col items-center overflow-hidden rounded-[22px] bg-lobeans-forest lg:min-h-[700px] lg:flex-row lg:items-stretch">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-lobeans-forest p-4 sm:p-6 lg:p-10">
+      {/* Latar belakang Hero Botanical LOBEANS */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero-lobeans.svg"
+          alt=""
+          className="h-full w-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0c1d15]/68 via-[#13291f]/46 to-[#0b1b13]/76" />
+      </div>
+
+      <div className="relative z-10 flex min-h-[600px] w-full max-w-[1280px] flex-col items-center overflow-hidden rounded-[28px] border border-white/15 bg-[#13291f]/42 shadow-[0_36px_80px_-24px_rgba(0,0,0,0.62)] backdrop-blur-xl lg:min-h-[680px] lg:flex-row lg:items-stretch">
         {/* Panel Brand */}
-        <div className="flex w-full shrink-0 flex-col justify-between px-8 py-10 sm:px-12 lg:w-[535px] lg:px-16 lg:py-14">
+        <div className="flex w-full shrink-0 flex-col justify-between px-8 py-10 sm:px-12 lg:w-[520px] lg:px-14 lg:py-14">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[22px] font-bold tracking-[0.78px] text-lobeans-cream sm:text-[26px]">LOBEANS</span>
+            <Link href="/" className="inline-flex items-center gap-2 transition-opacity hover:opacity-90">
+              <span className="text-[22px] font-semibold tracking-[0.78px] text-lobeans-cream sm:text-[25px]">LOBEANS</span>
               <span className="h-2 w-2 rounded-full bg-lobeans-mustard" />
-            </div>
-            <p className="mt-1 text-[9.5px] font-semibold tracking-[1.2px] text-lobeans-sage">
+            </Link>
+            <p className="mt-1 text-[9.5px] font-medium tracking-[1.4px] text-white/70">
               SMART INVENTORY, BETTER COFFEE.
             </p>
           </div>
 
           <div className="mt-14 lg:mt-0">
             <div className="mb-6 h-[3px] w-[42px] rounded-full bg-lobeans-mustard" />
-            <h1 className="text-[32px] font-bold leading-[1.28] tracking-[-0.02em] text-lobeans-cream sm:text-[40px] lg:text-[44px]">
+            <h1 className="text-[32px] font-medium leading-[1.24] tracking-[-0.025em] text-white sm:text-[40px] lg:text-[44px]">
               Kelola pasokan
               <br />
               kopi dengan
               <br />
-              lebih terukur.
+              <span className="font-editorial text-[1.12em] font-normal italic text-lobeans-mustard">lebih terukur.</span>
             </h1>
-            <p className="mt-5 max-w-[440px] text-[13.5px] leading-[24px] text-lobeans-sage">
+            <p className="mt-5 max-w-[430px] text-[13.5px] font-light leading-[24px] text-white/80">
               Platform manajemen gudang dan kemitraan supplier green bean terpadu — dari permintaan pasokan, pemeriksaan kualitas, hingga distribusi harian.
             </p>
           </div>
 
           <div className="mt-14 lg:mt-0">
-            <p className="text-[11px] font-semibold text-lobeans-cream/85">LOBEANS © 2026</p>
-            <p className="mt-1 text-[10px] text-lobeans-sage">Coffee Inventory &amp; Supply Chain Platform</p>
+            <p className="text-[11px] font-medium text-white/85">LOBEANS © 2026</p>
+            <p className="mt-1 text-[10px] font-light text-white/65">Coffee Inventory &amp; Supply Chain Platform</p>
           </div>
         </div>
 
         {/* Kartu Login */}
         <div className="flex w-full flex-1 items-center justify-center p-4 sm:p-8 lg:w-auto lg:p-12">
-          <Suspense fallback={<div className="h-[460px] w-full max-w-[560px] rounded-[26px] bg-white" />}>
+          <Suspense fallback={<div className="h-[460px] w-full max-w-[560px] rounded-[26px] bg-white/95" />}>
             <LoginCard />
           </Suspense>
         </div>
