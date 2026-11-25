@@ -48,13 +48,13 @@ async function AdminDashboard({ user }) {
       <HeroDashboard
         roleTag="Dashboard Admin"
         greeting={`Selamat datang, ${user.name.split(' ')[0]}.`}
-        subtitle="Kelola katalog produk, kategori kopi, verifikasi mitra supplier baru, serta pantau seluruh aktivitas gudang LOBEANS."
-        ctaLabel="+  Tambah Produk"
-        ctaHref="/products/new"
-        secondaryLabel="Verifikasi supplier →"
-        secondaryHref="/suppliers"
+        subtitle="Kelola katalog produk, kategori kopi, tambah akun Staff/Manager/Supplier, verifikasi mitra baru, serta pantau seluruh aktivitas gudang LOBEANS."
+        ctaLabel="+  Tambah Pengguna"
+        ctaHref="/users/new"
+        secondaryLabel="Tambah produk →"
+        secondaryHref="/products/new"
         contextTitle="Kontrol Sistem"
-        contextNote="Master Data, Verifikasi Mitra & Laporan"
+        contextNote="Akun Pengguna, Master Data & Laporan"
       />
 
       <SectionTitle title="Ringkasan Gudang" subtitle="Kondisi produk, nilai persediaan, dan antrean verifikasi terkini." />
@@ -68,6 +68,51 @@ async function AdminDashboard({ user }) {
           note={stats.pending_suppliers > 0 ? 'Perlu persetujuan Anda' : 'Semua terverifikasi'}
           href="/suppliers"
         />
+      </div>
+
+      {/* Tambah Pengguna Cepat (Staff, Manager, Supplier) */}
+      <div className="mt-7">
+        <Card
+          title="Tambah Pengguna Baru"
+          subtitle="Buat akun operasional baru untuk Staff Gudang, Manager Gudang, atau mitra Supplier langsung dari dashboard."
+          action={more('/users', 'Kelola semua akun →')}
+          padded
+        >
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+            <Link
+              href="/users/new?role=staff"
+              className="group flex items-center justify-between rounded-[14px] border border-[#e5e4dc] bg-[#faf9f5] px-4 py-3.5 transition-all hover:border-lobeans-forest hover:bg-white"
+            >
+              <div>
+                <p className="text-[13.5px] font-bold text-lobeans-ink">+ Tambah Staff Gudang</p>
+                <p className="mt-0.5 text-[11px] text-lobeans-muted">Inspeksi fisik, catatan IN &amp; pengiriman OUT</p>
+              </div>
+              <span className="font-bold text-lobeans-forest transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
+
+            <Link
+              href="/users/new?role=manager"
+              className="group flex items-center justify-between rounded-[14px] border border-[#e5e4dc] bg-[#faf9f5] px-4 py-3.5 transition-all hover:border-lobeans-forest hover:bg-white"
+            >
+              <div>
+                <p className="text-[13.5px] font-bold text-lobeans-ink">+ Tambah Manager Gudang</p>
+                <p className="mt-0.5 text-[11px] text-lobeans-muted">Restock PO, persetujuan IN/OUT &amp; katalog</p>
+              </div>
+              <span className="font-bold text-lobeans-forest transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
+
+            <Link
+              href="/users/new?role=supplier"
+              className="group flex items-center justify-between rounded-[14px] border border-[#e5e4dc] bg-[#faf9f5] px-4 py-3.5 transition-all hover:border-lobeans-mustard hover:bg-white"
+            >
+              <div>
+                <p className="text-[13.5px] font-bold text-lobeans-ink">+ Tambah Supplier</p>
+                <p className="mt-0.5 text-[11px] text-lobeans-muted">Buat profil mitra &amp; akun login sekaligus</p>
+              </div>
+              <span className="font-bold text-[#9c6b04] transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
+          </div>
+        </Card>
       </div>
 
       {pendingSuppliers.length > 0 && (

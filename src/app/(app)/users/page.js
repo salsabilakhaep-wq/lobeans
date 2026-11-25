@@ -32,11 +32,16 @@ export default async function UsersPage({ searchParams }) {
       <PageHeader
         eyebrow="Administrasi Akun"
         title="Daftar Akun & Role"
-        subtitle="Akun Admin, Manager Gudang, dan Staff Gudang disiapkan melalui data awal sistem; akun Supplier mendaftar mandiri melalui halaman registrasi dan diverifikasi Admin."
+        subtitle="Kelola seluruh akun Staff Gudang, Manager Gudang, dan mitra Supplier LOBEANS."
         action={
-          <LinkButton href="/suppliers" variant="secondary">
-            Verifikasi Supplier →
-          </LinkButton>
+          <>
+            <LinkButton href="/suppliers" variant="secondary">
+              Verifikasi Supplier →
+            </LinkButton>
+            <LinkButton href="/users/new" icon="plus">
+              Tambah Pengguna
+            </LinkButton>
+          </>
         }
       />
 

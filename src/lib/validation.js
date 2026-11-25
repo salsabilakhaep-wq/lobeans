@@ -80,14 +80,38 @@ export const supplierRegisterSchema = z
 
 // ---------------------------------------------------------------- Users (Admin)
 const roleCode = z.enum(['admin', 'manager', 'staff', 'supplier'], 'Pilih role yang valid');
+const createRoleCode = z.enum(['manager', 'staff', 'supplier'], 'Pilih role Staff, Manager, atau Supplier');
 
-export const userCreateSchema = z.object({
-  name: text('Nama', { min: 2, max: 100 }),
-  email,
-  role: roleCode,
-  supplier_id: z.string().trim().optional().default(''),
-  password,
-});
+export const userCreateSchema = z
+  .object({
+    name: text('Nama lengkap', { min: 2, max: 100 }),
+    email,
+    role: createRoleCode,
+    supplier_mode: z.enum(['new', 'existing']).optional().default('new'),
+    supplier_id: z.string().trim().optional().default(''),
+    company_name: z.string().trim().max(150, 'Nama perusahaan maksimal 150 karakter').optional().default(''),
+    phone: z.string().trim().max(30, 'Nomor telepon maksimal 30 karakter').optional().default(''),
+    address: z.string().trim().max(500, 'Alamat maksimal 500 karakter').optional().default(''),
+    password,
+  })
+  .superRefine((d, ctx) => {
+    if (d.role !== 'supplier') return;
+    if (d.supplier_mode === 'existing') {
+      if (!/^\d+$/.test(d.supplier_id) || Number(d.supplier_id) <= 0) {
+        ctx.addIssue({ code: 'custom', path: ['supplier_id'], message: 'Pilih profil Supplier yang tersedia.' });
+      }
+      return;
+    }
+    if (d.company_name.length < 2) {
+      ctx.addIssue({ code: 'custom', path: ['company_name'], message: 'Nama perusahaan / koperasi wajib diisi minimal 2 karakter.' });
+    }
+    if (d.phone.length < 6) {
+      ctx.addIssue({ code: 'custom', path: ['phone'], message: 'Nomor telepon wajib diisi minimal 6 karakter.' });
+    }
+    if (d.address.length < 5) {
+      ctx.addIssue({ code: 'custom', path: ['address'], message: 'Alamat lengkap wajib diisi minimal 5 karakter.' });
+    }
+  });
 
 export const userUpdateSchema = z.object({
   name: text('Nama', { min: 2, max: 100 }),

@@ -8,6 +8,7 @@ import { requireUser } from '@/lib/auth.js';
 import { logActivity } from '@/lib/audit.js';
 import { AppError } from '@/lib/errors.js';
 import { fail, formToObject, run, success } from '@/lib/form.js';
+import { saveImage } from '@/lib/upload.js';
 import { parse, userCreateSchema, userUpdateSchema } from '@/lib/validation.js';
 
 const done = (msg) => redirect('/users?ok=' + encodeURIComponent(msg));
@@ -15,18 +16,53 @@ const done = (msg) => redirect('/users?ok=' + encodeURIComponent(msg));
 export async function createUserAction(_prev, formData) {
   const actor = await requireUser(['admin']);
   const parsed = parse(userCreateSchema, formToObject(formData));
-  if (!parsed.ok) return fail('Periksa kembali isian pengguna.', parsed.errors, formData);
+
+  const rawRole = String(formData.get('role') || '');
+  const rawMode = String(formData.get('supplier_mode') || 'new');
+  const needsDoc = rawRole === 'supplier' && rawMode === 'new';
+  const doc = needsDoc ? await saveImage(formData.get('document'), { required: true }) : { url: null, error: null };
+
+  if (!parsed.ok || doc.error) {
+    const docErr = doc.error ? 'Dokumen profil / legalitas supplier wajib diunggah.' : undefined;
+    return fail(
+      docErr || 'Periksa kembali isian pengguna.',
+      { ...parsed.errors, ...(docErr ? { document: docErr } : {}) },
+      formData,
+    );
+  }
   const d = parsed.data;
 
   return run(async () => {
-    const supplierId = d.role === 'supplier' ? Number(d.supplier_id) : null;
-    if (d.role === 'supplier' && (!Number.isInteger(supplierId) || supplierId <= 0)) {
-      throw new AppError('Akun dengan role Supplier wajib dihubungkan ke satu profil Supplier.', 'supplier_id');
-    }
-
     await withTransaction(async (client) => {
       const roleRow = await client.query('SELECT id FROM roles WHERE code = $1', [d.role]);
       if (!roleRow.rows[0]) throw new AppError('Role tidak ditemukan.', 'role');
+
+      let supplierId = null;
+      if (d.role === 'supplier') {
+        if (d.supplier_mode === 'existing') {
+          supplierId = Number(d.supplier_id);
+          const supCheck = await client.query('SELECT id FROM suppliers WHERE id = $1', [supplierId]);
+          if (!supCheck.rows[0]) throw new AppError('Profil Supplier tidak ditemukan.', 'supplier_id');
+        } else {
+          const codeRes = await client.query('SELECT COALESCE(MAX(id), 0)::int + 1 AS next_num FROM suppliers');
+          const supplierCode = `SUP-${String(codeRes.rows[0].next_num).padStart(3, '0')}`;
+          try {
+            const supIns = await client.query(
+              `INSERT INTO suppliers (supplier_code, company_name, contact_name, phone, email, address, document_url, verification_status, verified_by, verified_at, is_active)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, 'approved', $8, NOW(), TRUE)
+               RETURNING id`,
+              [supplierCode, d.company_name, d.name, d.phone, d.email, d.address, doc.url, actor.id],
+            );
+            supplierId = supIns.rows[0].id;
+          } catch (err) {
+            if (err.code === '23505') {
+              throw new AppError('Email atau kode supplier sudah terdaftar.', 'email');
+            }
+            throw err;
+          }
+        }
+      }
+
       const hash = await bcrypt.hash(d.password, 10);
       try {
         const ins = await client.query(
@@ -39,7 +75,7 @@ export async function createUserAction(_prev, formData) {
           action: 'create_user',
           entityType: 'user',
           entityId: ins.rows[0].id,
-          summary: `Admin membuat akun ${d.name} (${d.email}) dengan role ${d.role}.`,
+          summary: `Admin menambahkan akun ${d.name} (${d.email}) dengan role ${d.role}.`,
         });
       } catch (err) {
         if (err.code === '23505') {
@@ -52,7 +88,9 @@ export async function createUserAction(_prev, formData) {
       }
     });
     revalidatePath('/users');
-    done(`Akun ${d.name} berhasil ditambahkan.`);
+    revalidatePath('/suppliers');
+    revalidatePath('/dashboard');
+    done(`Akun ${d.name} (${d.role}) berhasil ditambahkan.`);
   }, formData);
 }
 
