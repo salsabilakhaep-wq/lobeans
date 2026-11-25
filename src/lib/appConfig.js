@@ -49,6 +49,11 @@ export const APP_CONFIG = {
     codeMaxRetry: 5,            // Jumlah percobaan ulang otomatis jika kode bentrok saat pendaftaran bersamaan.
   },
 
+  supplyOrder: {
+    defaultRestockQty: 25,      // Jumlah default (kg) saat klik tombol "+ Permintaan PO" dari produk stok menipis.
+    defaultExpectedDays: 7,     // Target default kedatangan barang (hari dari tanggal permintaan).
+  },
+
   /* ── 5. PENGATURAN KEAMANAN TAMBAHAN (HARDENING) ── */
   security: {
     requireAuthForUploads: true,       // Wajib login untuk membuka file di /uploads/[file].

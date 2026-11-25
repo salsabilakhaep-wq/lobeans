@@ -21,11 +21,14 @@ export default async function ProductsPage({ searchParams }) {
   const sort = sp.sort || 'name';
   const page = Math.max(1, Number(sp.page) || 1);
   const canManage = ['admin', 'manager'].includes(user.role);
+  const isManager = user.role === 'manager';
 
   const [products, categories] = await Promise.all([
     many('SELECT * FROM v_products ORDER BY is_active DESC, name ASC'),
     many('SELECT id, name FROM categories WHERE is_active = TRUE ORDER BY id'),
   ]);
+
+  const lowStockCount = products.filter((p) => p.is_active && p.stock_status !== 'normal').length;
 
   let filtered = products.filter((p) => {
     if (!canManage && !p.is_active) return false;
@@ -83,6 +86,29 @@ export default async function ProductsPage({ searchParams }) {
         }
       />
 
+      {isManager && lowStockCount > 0 && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-amber-300/80 bg-amber-50/80 px-4 py-3.5 text-[12.5px] text-amber-950">
+          <div>
+            <p className="font-bold">
+              Perhatian: {lowStockCount} produk aktif sedang memiliki stok menipis (Low / Severe / Out of Stock).
+            </p>
+            <p className="mt-0.5 text-[11.5px] text-amber-900/80">
+              Klik tombol <strong>+ Permintaan PO</strong> pada kartu produk untuk langsung mengajukan restock ke Supplier.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {status !== 'alert' && (
+              <Link href="/products?status=alert" className={buttonClass('secondary', 'sm')}>
+                Filter Stok Menipis ({lowStockCount})
+              </Link>
+            )}
+            <LinkButton href="/supply-orders/new" size="sm" variant="primary" icon="plus">
+              Buat Permintaan PO
+            </LinkButton>
+          </div>
+        </div>
+      )}
+
       <form method="GET" className="mb-6 grid grid-cols-1 gap-3 rounded-[14px] border border-[#e5e4dc] bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
         <input name="q" defaultValue={sp.q || ''} placeholder="Cari nama produk atau SKU…" className={inputCls} />
         <select name="category" defaultValue={sp.category || ''} className={inputCls}>
@@ -121,9 +147,9 @@ export default async function ProductsPage({ searchParams }) {
           {paged.map((p) => (
             <article
               key={p.id}
-              className={`flex flex-col overflow-hidden rounded-[16px] border border-[#e5e4dc] bg-white transition-all hover:border-lobeans-forest/35 hover:shadow-sm ${
-                !p.is_active ? 'opacity-60' : ''
-              }`}
+              className={`flex flex-col overflow-hidden rounded-[16px] border bg-white transition-all hover:border-lobeans-forest/35 hover:shadow-sm ${
+                p.is_active && p.stock_status !== 'normal' ? 'border-amber-300/85' : 'border-[#e5e4dc]'
+              } ${!p.is_active ? 'opacity-60' : ''}`}
             >
               {/* Gambar Produk Besar & Jelas (2 card per baris) */}
               <Link href={`/products/${p.id}`} className="relative block h-56 w-full overflow-hidden bg-[#13291f]">
@@ -186,21 +212,16 @@ export default async function ProductsPage({ searchParams }) {
 
                 {/* Baris Aksi */}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#eeede6] pt-3.5">
-                  <div className="flex items-center gap-3">
-                    <Link href={`/products/${p.id}`} className="text-[12.5px] font-bold text-lobeans-forest hover:underline">
-                      Detail &amp; Barcode →
-                    </Link>
-                    {user.role === 'manager' && p.stock_status !== 'normal' && p.is_active && (
-                      <Link
-                        href={`/supply-orders/new?product_id=${p.id}`}
-                        className="text-[12px] font-bold text-amber-800 hover:underline"
-                      >
-                        + Restock PO
-                      </Link>
-                    )}
-                  </div>
+                  <Link href={`/products/${p.id}`} className="text-[12.5px] font-bold text-lobeans-forest hover:underline">
+                    Detail &amp; Barcode →
+                  </Link>
                   {canManage && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isManager && p.stock_status !== 'normal' && p.is_active && (
+                        <LinkButton href={`/supply-orders/new?product_id=${p.id}`} size="sm" variant="primary" icon="plus">
+                          Permintaan PO
+                        </LinkButton>
+                      )}
                       <Link href={`/products/${p.id}/edit`} className={buttonClass('secondary', 'sm')}>
                         Ubah
                       </Link>

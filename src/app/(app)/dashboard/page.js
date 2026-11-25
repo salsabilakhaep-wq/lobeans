@@ -519,9 +519,9 @@ async function ManagerDashboard({ user }) {
                     >
                       Hapus
                     </ActionButton>
-                    <Link href={`/supply-orders/new?product_id=${p.id}`} className="font-bold text-[#284c35] hover:underline">
-                      Minta Pasokan →
-                    </Link>
+                    <LinkButton href={`/supply-orders/new?product_id=${p.id}`} size="sm" variant="primary" icon="plus">
+                      Permintaan PO
+                    </LinkButton>
                   </div>
                 </td>
               </tr>

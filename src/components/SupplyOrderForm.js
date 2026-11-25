@@ -5,8 +5,8 @@ import { ActionForm, Field, Input, Select, SubmitButton, Textarea } from './Acti
 import { ItemsEditor } from './ItemsEditor.js';
 import { buttonClass } from './styles.js';
 
-export function SupplyOrderForm({ action, suppliers, products, today, nextWeek, defaultProductId = null }) {
-  const initialItems = defaultProductId ? [{ product_id: Number(defaultProductId), quantity: 25 }] : undefined;
+export function SupplyOrderForm({ action, suppliers, products, today, nextWeek, defaultProductId = null, defaultQty = 25 }) {
+  const initialItems = defaultProductId ? [{ product_id: Number(defaultProductId), quantity: defaultQty }] : undefined;
 
   return (
     <ActionForm action={action} className="space-y-5">
