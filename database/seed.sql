@@ -48,18 +48,18 @@ INSERT INTO roles (code, name, description) VALUES
 
 -- 2. SUPPLIERS (2 aktif terverifikasi + 1 pendaftar baru menunggu verifikasi Admin)
 INSERT INTO suppliers (supplier_code, company_name, contact_name, phone, email, address, document_url, verification_status, is_active) VALUES
- ('SUP-001', 'Koperasi Baitul Qiradh Baburrayyan Gayo', 'Hendra Kusuma',  '0643-21098',     'supplier1@lobeans.test', 'Takengon, Aceh Tengah',    '/proof-sample.svg', 'approved', TRUE),
- ('SUP-002', 'Kelompok Tani Buntu Karua Toraja',        'Taufik Hidayat', '0812-4567-8901', 'supplier2@lobeans.test', 'Makale, Tana Toraja',      '/proof-sample.svg', 'approved', TRUE),
- ('SUP-003', 'Koperasi Kopi Kintamani Bali',            'Made Wirawan',   '0813-9012-3456', 'supplier3@lobeans.test', 'Kintamani, Bangli, Bali',  '/proof-sample.svg', 'pending',  FALSE);
+ ('SUP-001', 'Koperasi Baitul Qiradh Baburrayyan Gayo', 'Prabowo Susanto', '0643-21098',     'supplier1@lobeans.test', 'Takengon, Aceh Tengah',    '/proof-sample.svg', 'approved', TRUE),
+ ('SUP-002', 'Kelompok Tani Buntu Karua Toraja',        'Uzumaki Naruto',  '0812-4567-8901', 'supplier2@lobeans.test', 'Makale, Tana Toraja',      '/proof-sample.svg', 'approved', TRUE),
+ ('SUP-003', 'Koperasi Kopi Kintamani Bali',            'Peter Parker',    '0813-9012-3456', 'supplier3@lobeans.test', 'Kintamani, Bangli, Bali',  '/proof-sample.svg', 'pending',  FALSE);
 
 -- 3. USERS (Admin, Manager, Staff dibuat via .sql; Supplier via registrasi mandiri — bcrypt cost 10)
 INSERT INTO users (role_id, supplier_id, name, email, password_hash, is_active) VALUES
- (1, NULL, 'Nadia Putri',    'admin@lobeans.test',     '$2b$10$tkwcybARv7N1H2kUsTil5e4glZRM7dPruHvKAAgvfCo90gBJKOYIa', TRUE),
- (2, NULL, 'Andi Pratama',   'manager@lobeans.test',   '$2b$10$yNsQPRjz645RCEBpWIzc0eaVEFigiG0SsD/MZoZ4sghcaI4h6MIum', TRUE),
- (3, NULL, 'Rizky Saputra',  'staff@lobeans.test',     '$2b$10$aSI/Yk.LxYo92Mdg7xDEeOMJB/Zou9RZZdYC98Izhq6/8jnEHPWsu', TRUE),
- (4, 1,    'Hendra Kusuma',  'supplier1@lobeans.test', '$2b$10$f7B.nlDRoTQl/5hVCf7h5eCCGyfv8WDjvZc9vMQMoQsk4vZVT7Hta', TRUE),
- (4, 2,    'Taufik Hidayat', 'supplier2@lobeans.test', '$2b$10$f7B.nlDRoTQl/5hVCf7h5eCCGyfv8WDjvZc9vMQMoQsk4vZVT7Hta', TRUE),
- (4, 3,    'Made Wirawan',   'supplier3@lobeans.test', '$2b$10$f7B.nlDRoTQl/5hVCf7h5eCCGyfv8WDjvZc9vMQMoQsk4vZVT7Hta', FALSE);
+ (1, NULL, 'Salsabila Khaerani Putricia', 'admin@lobeans.test',     '$2b$10$tkwcybARv7N1H2kUsTil5e4glZRM7dPruHvKAAgvfCo90gBJKOYIa', TRUE),
+ (2, NULL, 'Zahrana Kumayla Irfan',       'manager@lobeans.test',   '$2b$10$yNsQPRjz645RCEBpWIzc0eaVEFigiG0SsD/MZoZ4sghcaI4h6MIum', TRUE),
+ (3, NULL, 'Ahmad Fauzi Ali',             'staff@lobeans.test',     '$2b$10$aSI/Yk.LxYo92Mdg7xDEeOMJB/Zou9RZZdYC98Izhq6/8jnEHPWsu', TRUE),
+ (4, 1,    'Prabowo Susanto',             'supplier1@lobeans.test', '$2b$10$f7B.nlDRoTQl/5hVCf7h5eCCGyfv8WDjvZc9vMQMoQsk4vZVT7Hta', TRUE),
+ (4, 2,    'Uzumaki Naruto',              'supplier2@lobeans.test', '$2b$10$f7B.nlDRoTQl/5hVCf7h5eCCGyfv8WDjvZc9vMQMoQsk4vZVT7Hta', TRUE),
+ (4, 3,    'Peter Parker',                'supplier3@lobeans.test', '$2b$10$f7B.nlDRoTQl/5hVCf7h5eCCGyfv8WDjvZc9vMQMoQsk4vZVT7Hta', FALSE);
 
 -- 4. CATEGORIES (4 Kategori Kopi dengan gambar default)
 INSERT INTO categories (name, description, image_url) VALUES
@@ -120,7 +120,7 @@ INSERT INTO inspection_photos (inspection_id, image_url, caption, uploaded_by) V
 -- TRX-1: IN Approved dari PO-1 -> stok +100 kg, PO otomatis Received
 -- TRX-2: IN Pending dari PO-2 (hasil pemeriksaan Sesuai -> diajukan Staff -> menunggu konfirmasi Manager)
 -- TRX-3: OUT Shipped ke Komorebi Specialty Roastery -> stok -20 kg (dipotong saat Shipped!)
--- TRX-4: OUT Pending dari Staff Rizky ke Kroma Coffee -> menunggu persetujuan Manager (stok belum berubah)
+-- TRX-4: OUT Pending dari Staff Ahmad Fauzi Ali ke Kroma Coffee -> menunggu persetujuan Manager (stok belum berubah)
 INSERT INTO inventory_transactions (trx_number, type, trx_date, inspection_id, supply_order_id, shipment_id, supplier_id, recipient_name, destination, notes, proof_image_url, status, created_by, approved_by, decided_at, shipped_at, shipped_by) VALUES
  ('TRX-IN-'  || to_char(CURRENT_DATE - 8, 'YYYYMMDD') || '-' || lpad(nextval('seq_trx_in')::text,  4, '0'), 'IN',  CURRENT_DATE - 8, 1,    1,    1,    1,    NULL,                          NULL,                             'Penerimaan barang masuk dari pengiriman SHP-1 (hasil pemeriksaan sesuai).', '/proof-sample.svg', 'approved', 3, 2,    NOW() - INTERVAL '8 days', NULL,                      NULL),
  ('TRX-IN-'  || to_char(CURRENT_DATE,     'YYYYMMDD') || '-' || lpad(nextval('seq_trx_in')::text,  4, '0'), 'IN',  CURRENT_DATE,     2,    2,    2,    2,    NULL,                          NULL,                             'Hasil pemeriksaan SHP-2 sesuai, siap ditempatkan di Silo A2 & C1.',           '/proof-sample.svg', 'pending',  3, NULL, NULL,                      NULL,                      NULL),
@@ -142,20 +142,20 @@ INSERT INTO stock_movements (product_id, transaction_id, movement_type, quantity
 INSERT INTO notifications (user_id, title, message, link) VALUES
  (1, 'Pendaftaran Supplier Baru',    'Koperasi Kopi Kintamani Bali mendaftar sebagai supplier dan menunggu verifikasi.', '/suppliers'),
  (4, 'Restock Order (PO) Baru',      'Manager Gudang mengirim Restock Order 50 kg Excelsa Jember Natural.',              '/supply-orders/4'),
- (2, 'Barang Masuk Menunggu',        'Staff Rizky mengajukan catatan Barang Masuk (60 kg) dari hasil pemeriksaan PO-2.', '/transactions/2'),
+ (2, 'Barang Masuk Menunggu',        'Staff Ahmad Fauzi Ali mengajukan catatan Barang Masuk (60 kg) dari hasil pemeriksaan PO-2.', '/transactions/2'),
  (2, 'Pengiriman Tiba di Gudang',    'Pengiriman Robusta Dampit Fine dari Koperasi Gayo telah tiba. Tugaskan Staff.',     '/supply-orders/3'),
- (2, 'Barang Keluar Menunggu',       'Staff Rizky mengajukan pengeluaran 30 kg Robusta Dampit ke Kroma Coffee.',          '/transactions/4'),
+ (2, 'Barang Keluar Menunggu',       'Staff Ahmad Fauzi Ali mengajukan pengeluaran 30 kg Robusta Dampit ke Kroma Coffee.',          '/transactions/4'),
  (3, 'Pantau Persetujuan OUT',       'Transaksi barang keluar ke Kroma Coffee sedang menunggu persetujuan Manager.',      '/transactions/out');
 
 -- 12. ACTIVITY LOGS
 INSERT INTO activity_logs (actor_id, actor_role, action, entity_type, entity_id, summary, created_at) VALUES
- (2, 'manager',  'create_supply_order',  'supply_order', 1, 'Andi Pratama membuat Restock Order 100 kg Arabika Gayo Grade 1 ke Koperasi Gayo.', NOW() - INTERVAL '10 days'),
- (4, 'supplier', 'confirm_supply_order', 'supply_order', 1, 'Hendra Kusuma mengonfirmasi Restock Order PO-1.',                                   NOW() - INTERVAL '9 days'),
- (3, 'staff',    'submit_inspection',    'inspection',   1, 'Rizky Saputra mengirim laporan pemeriksaan SHP-1 (Hasil: Sesuai).',                   NOW() - INTERVAL '8 days'),
- (2, 'manager',  'approve_in',           'transaction',  1, 'Andi Pratama menyetujui transaksi barang masuk (+100 kg, PO-1 menjadi Received).',  NOW() - INTERVAL '8 days'),
- (2, 'manager',  'approve_out',          'transaction',  3, 'Andi Pratama menyetujui transaksi barang keluar ke Komorebi (siap packing).',       NOW() - INTERVAL '4 days'),
- (3, 'staff',    'ship_out',             'transaction',  3, 'Rizky Saputra mengirim barang ke Komorebi (Shipped, stok -20 kg).',                 NOW() - INTERVAL '3 days'),
- (3, 'staff',    'submit_inspection',    'inspection',   2, 'Rizky Saputra mengirim laporan pemeriksaan SHP-2 (Hasil: Sesuai).',                   NOW() - INTERVAL '4 hours'),
- (2, 'manager',  'create_supply_order',  'supply_order', 4, 'Andi Pratama membuat Restock Order 50 kg Excelsa Jember Natural ke Koperasi Gayo.',   NOW() - INTERVAL '1 hour');
+ (2, 'manager',  'create_supply_order',  'supply_order', 1, 'Zahrana Kumayla Irfan membuat Restock Order 100 kg Arabika Gayo Grade 1 ke Koperasi Gayo.', NOW() - INTERVAL '10 days'),
+ (4, 'supplier', 'confirm_supply_order', 'supply_order', 1, 'Prabowo Susanto mengonfirmasi Restock Order PO-1.',                                           NOW() - INTERVAL '9 days'),
+ (3, 'staff',    'submit_inspection',    'inspection',   1, 'Ahmad Fauzi Ali mengirim laporan pemeriksaan SHP-1 (Hasil: Sesuai).',                           NOW() - INTERVAL '8 days'),
+ (2, 'manager',  'approve_in',           'transaction',  1, 'Zahrana Kumayla Irfan menyetujui transaksi barang masuk (+100 kg, PO-1 menjadi Received).',  NOW() - INTERVAL '8 days'),
+ (2, 'manager',  'approve_out',          'transaction',  3, 'Zahrana Kumayla Irfan menyetujui transaksi barang keluar ke Komorebi (siap packing).',           NOW() - INTERVAL '4 days'),
+ (3, 'staff',    'ship_out',             'transaction',  3, 'Ahmad Fauzi Ali mengirim barang ke Komorebi (Shipped, stok -20 kg).',                         NOW() - INTERVAL '3 days'),
+ (3, 'staff',    'submit_inspection',    'inspection',   2, 'Ahmad Fauzi Ali mengirim laporan pemeriksaan SHP-2 (Hasil: Sesuai).',                           NOW() - INTERVAL '4 hours'),
+ (2, 'manager',  'create_supply_order',  'supply_order', 4, 'Zahrana Kumayla Irfan membuat Restock Order 50 kg Excelsa Jember Natural ke Koperasi Gayo.',     NOW() - INTERVAL '1 hour');
 
 COMMIT;

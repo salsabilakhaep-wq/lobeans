@@ -67,11 +67,11 @@ Setelah `database/seed.sql` dijalankan, Anda dapat login di `http://localhost:30
 
 | Peran (Role) | Nama | Email | Password | Status |
 |---|---|---|---|---|
-| **Admin** | Nadia Putri | `admin@lobeans.test` | `Admin123!` | Aktif |
-| **Manager Gudang** | Andi Pratama | `manager@lobeans.test` | `Manager123!` | Aktif |
-| **Staff Gudang** | Rizky Saputra | `staff@lobeans.test` | `Staff123!` | Aktif |
-| **Supplier 1** | Hendra Kusuma (Koperasi Gayo) | `supplier1@lobeans.test` | `Supplier123!` | Aktif (Terverifikasi) |
-| **Supplier 2** | Taufik Hidayat (Kelompok Tani Toraja) | `supplier2@lobeans.test` | `Supplier123!` | Aktif (Terverifikasi) |
-| **Supplier 3** | Made Wirawan (Koperasi Kintamani) | `supplier3@lobeans.test` | `Supplier123!` | Pending (Menunggu Verifikasi Admin) |
+| **Admin** | Salsabila Khaerani Putricia | `admin@lobeans.test` | `Admin123!` | Aktif |
+| **Manager Gudang** | Zahrana Kumayla Irfan | `manager@lobeans.test` | `Manager123!` | Aktif |
+| **Staff Gudang** | Ahmad Fauzi Ali | `staff@lobeans.test` | `Staff123!` | Aktif |
+| **Supplier 1** | Prabowo Susanto (Koperasi Gayo) | `supplier1@lobeans.test` | `Supplier123!` | Aktif (Terverifikasi) |
+| **Supplier 2** | Uzumaki Naruto (Kelompok Tani Toraja) | `supplier2@lobeans.test` | `Supplier123!` | Aktif (Terverifikasi) |
+| **Supplier 3** | Peter Parker (Koperasi Kintamani) | `supplier3@lobeans.test` | `Supplier123!` | Pending (Menunggu Verifikasi Admin) |
 
 > **Catatan Keamanan:** Seluruh password di atas tersimpan di kolom `users.password_hash` dalam bentuk hash **`bcryptjs` (cost 10)**, bukan *plaintext*. Akun Supplier baru juga dapat didaftarkan langsung melalui halaman `/register` lalu diverifikasi oleh Admin.

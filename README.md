@@ -75,12 +75,12 @@ Setelah menjalankan `database/seed.sql`, gunakan akun berikut untuk pengujian ti
 
 | Peran (Role) | Nama | Email | Password | Status |
 |---|---|---|---|---|
-| **Admin** | Nadia Putri | `admin@lobeans.test` | `Admin123!` | Aktif |
-| **Manager Gudang** | Andi Pratama | `manager@lobeans.test` | `Manager123!` | Aktif |
-| **Staff Gudang** | Rizky Saputra | `staff@lobeans.test` | `Staff123!` | Aktif |
-| **Supplier 1** | Hendra Kusuma | `supplier1@lobeans.test` | `Supplier123!` | Aktif |
-| **Supplier 2** | Taufik Hidayat | `supplier2@lobeans.test` | `Supplier123!` | Aktif |
-| **Supplier 3** | Made Wirawan | `supplier3@lobeans.test` | `Supplier123!` | Pending Verifikasi Admin |
+| **Admin** | Salsabila Khaerani Putricia | `admin@lobeans.test` | `Admin123!` | Aktif |
+| **Manager Gudang** | Zahrana Kumayla Irfan | `manager@lobeans.test` | `Manager123!` | Aktif |
+| **Staff Gudang** | Ahmad Fauzi Ali | `staff@lobeans.test` | `Staff123!` | Aktif |
+| **Supplier 1** | Prabowo Susanto | `supplier1@lobeans.test` | `Supplier123!` | Aktif |
+| **Supplier 2** | Uzumaki Naruto | `supplier2@lobeans.test` | `Supplier123!` | Aktif |
+| **Supplier 3** | Peter Parker | `supplier3@lobeans.test` | `Supplier123!` | Pending Verifikasi Admin |
 
 ## Struktur Proyek
 
