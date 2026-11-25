@@ -85,17 +85,20 @@ Setelah menjalankan `database/seed.sql`, gunakan akun berikut untuk pengujian ti
 ## Struktur Proyek
 
 ```text
-├── app/
-│   ├── (auth)/          # Halaman Login & Registrasi Supplier
-│   ├── (app)/           # Halaman private (Dashboard, Produk, Kategori, PO, Pengiriman, Inspeksi, Transaksi, Laporan)
-│   ├── actions/         # Next.js Server Actions
-│   └── api/             # Route ekspor CSV laporan
-├── components/          # Komponen UI reusable, form, workflow, & modal alert
 ├── database/
-│   ├── schema.sql       # Struktur 17 tabel, indeks, & view v_products
-│   ├── seed.sql         # Data awal & akun demo ter-hash bcryptjs
-│   └── README.md        # Panduan setup PostgreSQL (pgAdmin 4 / psql) & akun demo
-├── lib/                 # DB pool, autentikasi JWT, validasi Zod, audit log, services
-├── public/              # Aset statis (logo, ilustrasi kategori, placeholder)
-└── middleware.js        # Next.js Middleware proteksi route & role
+│   ├── schema.sql           # Struktur 17 tabel, indeks, & view v_products
+│   ├── seed.sql             # Data awal & akun demo ter-hash bcryptjs
+│   └── README.md            # Panduan setup PostgreSQL (pgAdmin 4 / psql) & akun demo
+├── public/                  # Aset statis (logo, latar hero, ilustrasi kategori)
+├── src/
+│   ├── app/
+│   │   ├── (auth)/          # Halaman Login & Registrasi Supplier
+│   │   ├── (app)/           # Halaman private (Dashboard, Produk, Kategori, PO, Pengiriman, Inspeksi, Transaksi, Laporan)
+│   │   ├── actions/         # Next.js Server Actions
+│   │   └── api/             # Route ekspor CSV laporan
+│   ├── components/          # Komponen UI reusable, landing page, form, workflow, & modal alert
+│   ├── lib/                 # DB pool, autentikasi JWT, validasi Zod, audit log, services
+│   └── middleware.js        # Next.js Middleware proteksi route & role
+├── eslint.config.mjs        # Konfigurasi ESLint (eslint-config-next)
+└── package.json
 ```
