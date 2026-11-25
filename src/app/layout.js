@@ -3,6 +3,11 @@ import './globals.css';
 export const metadata = {
   title: { default: 'LOBEANS — Coffee Inventory Management', template: '%s · LOBEANS' },
   description: 'Sistem manajemen inventaris kopi: persediaan green bean, pasokan, dan pengiriman.',
+  icons: {
+    icon: '/logo-mark.svg',
+    shortcut: '/logo-mark.svg',
+    apple: '/logo-mark.svg',
+  },
 };
 
 export const viewport = { width: 'device-width', initialScale: 1 };
