@@ -22,7 +22,7 @@ Gunakan daftar isi berikut untuk langsung menuju bagian yang dibutuhkan:
 | 7 | [Teknologi](#teknologi) | Stack teknologi frontend, backend, database, dan keamanan |
 | 8 | [Cara Menjalankan Secara Lokal](#cara-menjalankan-secara-lokal) | Langkah instalasi, setup PostgreSQL, `.env.local`, dan menjalankan server |
 | 9 | [Akun Demo](#akun-demo) | Kredensial akun uji untuk Admin, Manager, Staff, dan Supplier |
-| 10 | [Struktur Proyek](#struktur-proyek) | Susunan folder `database/`, `public/`, dan `src/` |
+| 10 | [Struktur Proyek](#struktur-proyek) | Susunan folder `public/` dan `src/` (termasuk `src/database/`) |
 
 ---
 
@@ -159,7 +159,7 @@ flowchart TD
 
 ## Entity Relationship Diagram
 
-Basis data **LOBEANS** dibangun di atas **PostgreSQL** dengan **17 tabel relasional** dan **1 view otomatis (`v_products`)** sebagaimana didefinisikan di [`database/schema.sql`](database/schema.sql).
+Basis data **LOBEANS** dibangun di atas **PostgreSQL** dengan **17 tabel relasional** dan **1 view otomatis (`v_products`)** sebagaimana didefinisikan di [`src/database/schema.sql`](src/database/schema.sql).
 
 ```mermaid
 erDiagram
@@ -473,15 +473,17 @@ npm install
 ```
 
 ### 3. Setup Basis Data PostgreSQL
-Buat database baru bernama `lobeans_db` lalu jalankan **`database/schema.sql`** diikuti **`database/seed.sql`** melalui **pgAdmin 4** atau terminal `psql`:
+Buat database baru bernama `lobeans_db` lalu jalankan **`src/database/schema.sql`** diikuti **`src/database/seed.sql`** melalui **pgAdmin 4** atau terminal `psql`:
 
 ```bash
 psql -U postgres -c "CREATE DATABASE lobeans_db;"
-psql -U postgres -d lobeans_db -f database/schema.sql
-psql -U postgres -d lobeans_db -f database/seed.sql
+psql -U postgres -d lobeans_db -f src/database/schema.sql
+psql -U postgres -d lobeans_db -f src/database/seed.sql
+# Opsional: tambah skenario dummy lengkap untuk demo presentasi
+psql -U postgres -d lobeans_db -f src/database/demo_dummy.sql
 ```
 
-Panduan langkah demi langkah menggunakan **pgAdmin 4** tersedia lengkap di [`database/README.md`](database/README.md).
+Panduan langkah demi langkah menggunakan **pgAdmin 4** tersedia lengkap di [`src/database/README.md`](src/database/README.md).
 
 ### 4. Konfigurasi Environment
 Salin `.env.example` menjadi `.env.local`, lalu sesuaikan kredensial PostgreSQL Anda:
@@ -510,7 +512,7 @@ npm run lint
 
 ## Akun Demo
 
-Setelah menjalankan `database/seed.sql`, gunakan akun berikut untuk pengujian tiap peran di `/login`:
+Setelah menjalankan `src/database/seed.sql`, gunakan akun berikut untuk pengujian tiap peran di `/login`:
 
 | Peran (Role) | Nama | Email | Password | Status |
 |---|---|---|---|---|
@@ -526,10 +528,6 @@ Setelah menjalankan `database/seed.sql`, gunakan akun berikut untuk pengujian ti
 ## Struktur Proyek
 
 ```text
-├── database/
-│   ├── schema.sql           # Struktur 17 tabel, indeks, & view v_products
-│   ├── seed.sql             # Data awal & akun demo ter-hash bcryptjs
-│   └── README.md            # Panduan setup PostgreSQL (pgAdmin 4 / psql) & akun demo
 ├── public/                  # Aset statis (logo-mark.svg, latar hero, ilustrasi kategori)
 ├── src/
 │   ├── app/
@@ -539,6 +537,11 @@ Setelah menjalankan `database/seed.sql`, gunakan akun berikut untuk pengujian ti
 │   │   ├── api/             # Route ekspor CSV laporan
 │   │   └── uploads/         # Route file upload terproteksi autentikasi
 │   ├── components/          # Komponen UI reusable, landing page, form, workflow, & modal alert
+│   ├── database/
+│   │   ├── schema.sql       # Struktur 17 tabel, indeks, & view v_products
+│   │   ├── seed.sql         # Data awal & akun demo ter-hash bcryptjs
+│   │   ├── demo_dummy.sql   # Data dummy tambahan (additive & idempotent) untuk demo presentasi
+│   │   └── README.md        # Panduan setup PostgreSQL (pgAdmin 4 / psql) & akun demo
 │   ├── lib/
 │   │   ├── appConfig.js     # Pusat parameter konfigurasi aplikasi internal & keamanan
 │   │   ├── landingConfig.js # Pusat parameter konten, navigasi, & animasi Landing Page

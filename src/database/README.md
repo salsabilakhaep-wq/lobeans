@@ -2,9 +2,9 @@
 
 Dokumen ini memandu langkah-langkah membuat, mengimpor skema, dan mengisi data awal basis data untuk aplikasi **LOBEANS — Coffee Inventory & Warehouse Management System**.
 
-Seluruh file SQL disimpan secara terpisah di folder `database/` (di luar folder `app/`) agar penguji maupun pengembang dapat memeriksa struktur tabel serta menjalankan database secara mandiri melalui **pgAdmin 4** maupun **`psql`**.
+Seluruh file SQL disimpan secara terpisah di folder `src/database/` (sejajar dengan `src/app/`) agar penguji maupun pengembang dapat memeriksa struktur tabel serta menjalankan database secara mandiri melalui **pgAdmin 4** maupun **`psql`**.
 
-## Isi Folder `database/`
+## Isi Folder `src/database/`
 
 | File | Keterangan |
 |---|---|
@@ -25,13 +25,13 @@ Seluruh file SQL disimpan secara terpisah di folder `database/` (di luar folder 
 2. **Buka Query Tool pada Database `lobeans_db`:**
    - Klik kanan pada database `lobeans_db` → pilih **Query Tool**.
 
-3. **Jalankan File Skema (`database/schema.sql`):**
-   - Klik ikon folder (**Open File**) pada toolbar Query Tool, lalu pilih `database/schema.sql`.
+3. **Jalankan File Skema (`src/database/schema.sql`):**
+   - Klik ikon folder (**Open File**) pada toolbar Query Tool, lalu pilih `src/database/schema.sql`.
    - Klik tombol **Execute / Refresh (F5)** dan tunggu hingga muncul pesan sukses (`Query returned successfully`).
    - *Hasil:* Seluruh 17 tabel (`roles`, `suppliers`, `users`, `categories`, `products`, `supply_orders`, `supply_order_items`, `shipments`, `inspections`, `inspection_items`, `inspection_photos`, `returns`, `inventory_transactions`, `inventory_transaction_items`, `stock_movements`, `notifications`, `activity_logs`), sequence, dan view `v_products` berhasil dibuat.
 
-4. **Jalankan File Data Awal (`database/seed.sql`):**
-   - Masih di Query Tool database `lobeans_db`, klik ikon **Open File**, lalu pilih `database/seed.sql`.
+4. **Jalankan File Data Awal (`src/database/seed.sql`):**
+   - Masih di Query Tool database `lobeans_db`, klik ikon **Open File**, lalu pilih `src/database/seed.sql`.
    - Klik tombol **Execute / Refresh (F5)** dan tunggu hingga muncul pesan sukses.
    - *Hasil:* Seluruh data dummy awal beserta akun demo siap digunakan.
 
@@ -43,10 +43,10 @@ Jika Anda menggunakan terminal / Command Prompt dengan PostgreSQL CLI (`psql`):
 
 ```bash
 psql -U postgres -c "CREATE DATABASE lobeans_db;"
-psql -U postgres -d lobeans_db -f database/schema.sql
-psql -U postgres -d lobeans_db -f database/seed.sql
+psql -U postgres -d lobeans_db -f src/database/schema.sql
+psql -U postgres -d lobeans_db -f src/database/seed.sql
 # Opsional: tambah skenario dummy lengkap untuk demo presentasi
-psql -U postgres -d lobeans_db -f database/demo_dummy.sql
+psql -U postgres -d lobeans_db -f src/database/demo_dummy.sql
 ```
 
 ---
@@ -66,7 +66,7 @@ APP_TZ=Asia/Makassar
 
 ## Daftar Akun Demo & Password
 
-Setelah `database/seed.sql` dijalankan, Anda dapat login di `http://localhost:3000/login` menggunakan akun berikut:
+Setelah `src/database/seed.sql` dijalankan, Anda dapat login di `http://localhost:3000/login` menggunakan akun berikut:
 
 | Peran (Role) | Nama | Email | Password | Status |
 |---|---|---|---|---|
