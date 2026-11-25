@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* ── Palet warna LOBEANS (dari Figma) ── */
+  --color-lobeans-forest: #13291f;
+  --color-lobeans-forest-light: #1e3a2c;
+  --color-lobeans-forest-dark: #0e1f17;
+  --color-lobeans-mustard: #dd990b;
+  --color-lobeans-mustard-hover: #c4870a;
+  --color-lobeans-mustard-frame: #d99319;
+  --color-lobeans-cream: #e8e1d1;
+  --color-lobeans-cream-light: #fcfcf9;
+  --color-lobeans-sage: #bcc8b9;
+  --color-lobeans-ink: #183124;
+  --color-lobeans-ink-light: #20372a;
+  --color-lobeans-muted: #657168;
+  --color-lobeans-border: #daddd3;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/poppins/v22/pxiEyp8kv8JHgFVrJJfecg.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/poppins/v22/pxiByp8kv8JHgFVrLGT9Z1xlFQ.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/poppins/v22/pxiByp8kv8JHgFVrLEj6Z1xlFQ.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/poppins/v22/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2') format('woff2');
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Sembunyikan panah spinner pada input number */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Sembunyikan ikon mata bawaan Microsoft Edge/browser agar tidak ganda dengan tombol ikon kustom */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+/* Native <dialog> modal scroll containment & backdrop */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(19, 41, 31, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}
+
+.overflow-x-auto {
+  position: relative;
+}
