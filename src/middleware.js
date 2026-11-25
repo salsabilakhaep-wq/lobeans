@@ -17,6 +17,7 @@ const PRIVATE_PREFIXES = [
   '/transactions',
   '/reports',
   '/notifications',
+  '/account',
   '/api/export',
 ];
 
@@ -33,6 +34,7 @@ const ROLE_RULES = [
   { prefix: '/transactions', roles: ['admin', 'manager', 'staff'] },
   { prefix: '/products', roles: ['admin', 'manager', 'staff'] },
   { prefix: '/shipments', roles: ['admin', 'manager', 'supplier'] },
+  { prefix: '/account', roles: ['supplier'] },
 ];
 
 function getSecretKey() {

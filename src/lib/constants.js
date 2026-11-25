@@ -71,5 +71,6 @@ export const NAV = {
     { href: '/dashboard', label: 'Dashboard', icon: 'home' },
     { href: '/supply-orders', label: 'Permintaan Pasokan', icon: 'truck' },
     { href: '/shipments', label: 'Pengiriman Barang', icon: 'box' },
+    { href: '/account', label: 'Kelola Akun', icon: 'user' },
   ],
 };

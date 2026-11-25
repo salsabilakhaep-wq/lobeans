@@ -36,17 +36,31 @@ function NotificationBell({ unreadCount = 0 }) {
 }
 
 function ProfileChip({ user }) {
-  return (
-    <div className="flex items-center gap-3">
+  const inner = (
+    <>
       <div className="text-right leading-tight">
         <p className="text-[13px] font-bold text-lobeans-ink">{user.name}</p>
         <p className="text-[11px] font-medium text-lobeans-muted">{ROLE_LABEL[user.role]}</p>
       </div>
-      <span className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-lobeans-forest text-lobeans-cream shadow-sm">
+      <span className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-lobeans-forest text-lobeans-cream shadow-sm transition-transform group-hover:scale-[1.03]">
         <Icon name="user" className="h-5 w-5" />
       </span>
-    </div>
+    </>
   );
+
+  if (user.role === 'supplier') {
+    return (
+      <Link
+        href="/account"
+        title="Kelola Akun"
+        className="group flex items-center gap-3 rounded-full py-1 pl-2 pr-1 transition-colors hover:bg-black/4"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return <div className="flex items-center gap-3">{inner}</div>;
 }
 
 export function Sidebar({ user, unreadCount = 0 }) {
@@ -124,9 +138,19 @@ export function Sidebar({ user, unreadCount = 0 }) {
         </div>
         <div className="flex items-center gap-2.5">
           <NotificationBell unreadCount={unreadCount} />
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-lobeans-forest text-lobeans-cream">
-            <Icon name="user" className="h-4 w-4" />
-          </span>
+          {user.role === 'supplier' ? (
+            <Link
+              href="/account"
+              aria-label="Kelola Akun"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-lobeans-forest text-lobeans-cream"
+            >
+              <Icon name="user" className="h-4 w-4" />
+            </Link>
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-lobeans-forest text-lobeans-cream">
+              <Icon name="user" className="h-4 w-4" />
+            </span>
+          )}
         </div>
       </div>
 
@@ -164,6 +188,7 @@ const TITLES = {
   '/transactions': 'Transaksi Gudang',
   '/reports': 'Laporan & Audit',
   '/notifications': 'Notifikasi',
+  '/account': 'Kelola Akun',
 };
 
 export function TopBar({ user, today, unreadCount = 0 }) {

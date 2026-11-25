@@ -188,3 +188,23 @@ export const outgoingSchema = z.object({
 export const reasonSchema = z.object({
   reason: text('Alasan penolakan', { min: 3, max: 500 }),
 });
+
+// ---------------------------------------------------------------- Account (Supplier Self-Service)
+export const supplierAccountProfileSchema = z.object({
+  company_name: text('Nama perusahaan / koperasi', { min: 2, max: 150 }),
+  contact_name: text('Nama penanggung jawab', { min: 2, max: 100 }),
+  email,
+  phone: text('Nomor telepon', { min: 6, max: 30 }),
+  address: text('Alamat lengkap', { min: 5, max: 500 }),
+});
+
+export const supplierChangePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, 'Kata sandi saat ini wajib diisi'),
+    new_password: password,
+    confirm_password: z.string().min(1, 'Konfirmasi kata sandi baru wajib diisi'),
+  })
+  .refine((d) => d.new_password === d.confirm_password, {
+    path: ['confirm_password'],
+    message: 'Konfirmasi kata sandi baru tidak cocok',
+  });
