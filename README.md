@@ -16,12 +16,13 @@ Gunakan daftar isi berikut untuk langsung menuju bagian yang dibutuhkan:
 | 1 | [Tentang LOBEANS](#tentang-lobeans) | Gambaran umum aplikasi, latar belakang bisnis, dan tujuan sistem |
 | 2 | [Fitur Utama](#fitur-utama) | Daftar fitur inti, keamanan autentikasi, dan aturan stok atomik |
 | 3 | [Flowchart Alur Sistem](#flowchart-alur-sistem) | Flowchart lengkap alur autentikasi, pengadaan PO, inspeksi, retur, dan transaksi IN/OUT |
-| 4 | [Entity Relationship Diagram](#entity-relationship-diagram) | Diagram ERD lengkap 17 tabel PostgreSQL + view `v_products` |
-| 5 | [Konfigurasi Parameter Terpusat](#konfigurasi-parameter-terpusat) | Pusat file konfigurasi untuk mengubah tampilan, animasi, dan aturan sistem |
-| 6 | [Teknologi](#teknologi) | Stack teknologi frontend, backend, database, dan keamanan |
-| 7 | [Cara Menjalankan Secara Lokal](#cara-menjalankan-secara-lokal) | Langkah instalasi, setup PostgreSQL, `.env.local`, dan menjalankan server |
-| 8 | [Akun Demo](#akun-demo) | Kredensial akun uji untuk Admin, Manager, Staff, dan Supplier |
-| 9 | [Struktur Proyek](#struktur-proyek) | Susunan folder `database/`, `public/`, dan `src/` |
+| 4 | [Matriks Hak Akses RBAC](#matriks-hak-akses-rbac) | Pembagian hak akses 4 peran (Admin, Manager, Staff, Supplier) & 3 lapis proteksi RBAC |
+| 5 | [Entity Relationship Diagram](#entity-relationship-diagram) | Diagram ERD lengkap 17 tabel PostgreSQL + view `v_products` |
+| 6 | [Konfigurasi Parameter Terpusat](#konfigurasi-parameter-terpusat) | Pusat file konfigurasi untuk mengubah tampilan, animasi, dan aturan sistem |
+| 7 | [Teknologi](#teknologi) | Stack teknologi frontend, backend, database, dan keamanan |
+| 8 | [Cara Menjalankan Secara Lokal](#cara-menjalankan-secara-lokal) | Langkah instalasi, setup PostgreSQL, `.env.local`, dan menjalankan server |
+| 9 | [Akun Demo](#akun-demo) | Kredensial akun uji untuk Admin, Manager, Staff, dan Supplier |
+| 10 | [Struktur Proyek](#struktur-proyek) | Susunan folder `database/`, `public/`, dan `src/` |
 
 ---
 
@@ -121,6 +122,38 @@ flowchart TD
 | **Barang Masuk `IN` (`Sesuai` → `Pending` → `Approved`)** | Staff → Manager | **Stok Bertambah (`+`)** atomik saat `Approved` + PO menjadi `Received` |
 | **Retur & Klaim Refund (`Tidak Sesuai` → `Returned`)** | Staff → Manager → Supplier | Tidak mengubah stok |
 | **Barang Keluar `OUT` (`Pending` → `Approved` → `Shipped`)** | Staff → Manager → Staff | **Stok Berkurang (`-`)** atomik saat `Shipped` |
+
+---
+
+## Matriks Hak Akses RBAC
+
+**LOBEANS** menerapkan **Role-Based Access Control (RBAC)** untuk memisahkan kewenangan **4 peran** (*Admin*, *Manager Gudang*, *Staff Gudang*, dan *Supplier*) secara ketat agar tidak terjadi tumpang tindih tanggung jawab maupun manipulasi stok.
+
+### Matriks Kewenangan per Modul & Rute
+
+| Modul / Fitur | Rute Utama | Admin | Manager Gudang | Staff Gudang | Supplier |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **Dashboard & Notifikasi** | `/dashboard`, `/notifications` | ✅ | ✅ | ✅ | ✅ |
+| **Kelola & Tambah Akun User** | `/users`, `/users/new` | ✅ Penuh | ❌ | ❌ | ❌ |
+| **Verifikasi & Kelola Mitra Supplier** | `/suppliers`, `/suppliers/new` | ✅ Penuh | ❌ | ❌ | ❌ |
+| **Kelola Kategori Kopi (CRUD)** | `/categories`, `/categories/new` | ✅ Penuh | ✅ Penuh | ❌ | ❌ |
+| **Katalog Produk & Barcode SKU** | `/products`, `/products/[id]` | ✅ CRUD | ✅ CRUD + `+ Permintaan PO` | 👁️ Lihat Stok | ❌ |
+| **Restock Order / PO** | `/supply-orders` | 👁️ Lihat | ✅ Buat, Hapus Pending, Instruksi, Retur | 👁️ Lihat | ✅ Milik Sendiri *(Konfirmasi/Tolak, Kirim, Tiba)* |
+| **Pengiriman Barang** | `/shipments` | 👁️ Pantau | 👁️ Pantau | ❌ | ✅ Milik Sendiri |
+| **Pemeriksaan Fisik Barang** | `/inspections` | 👁️ Pantau | 👁️ Pantau | ✅ Periksa + Foto Wajib | ❌ |
+| **Transaksi Barang Masuk (`IN`)** | `/transactions/in` | 👁️ Lihat | ✅ Setujui *(Stok `+`)* / Tolak | ✅ Ajukan *(hasil Sesuai)* | ❌ |
+| **Transaksi Barang Keluar (`OUT`)** | `/transactions/out` | 👁️ Lihat | ✅ Setujui / Tolak | ✅ Buat/Edit/Hapus Pending + `Shipped` *(Stok `-`)* | ❌ |
+| **Laporan & Audit Trail** | `/reports` | ✅ Penuh | ✅ Operasional | ❌ | ❌ |
+| **Ekspor CSV** | `/api/export/[module]` | ✅ Semua *(6 modul)* | ✅ Produk, Mutasi, Transaksi, PO | ⚠️ Transaksi milik sendiri | ❌ |
+| **Kelola Akun & Password Mandiri** | `/account` | ❌ | ❌ | ❌ | ✅ Profil, Dokumen & Password |
+
+> **Keterangan:** `✅` Akses penuh / aksi sesuai peran · `👁️` Hanya baca (*read-only*) · `⚠️` Terbatas data milik sendiri · `❌` Ditolak (*redirect* ke `/dashboard` atau `403 Forbidden`).
+
+### 3 Lapis Penegakan RBAC di Sistem
+
+1. **Lapis 1 — Edge Middleware ([`src/middleware.js`](src/middleware.js))**: Memverifikasi tanda tangan JWT pada cookie `HttpOnly` (`lobeans_session`) dan mencocokkan rute terhadap `PRIVATE_PREFIXES` & `ROLE_RULES` sebelum halaman/API dirender.
+2. **Lapis 2 — Server-Side Guard ([`src/lib/auth.js`](src/lib/auth.js))**: Setiap halaman privat dan Server Action memanggil `requireUser([...roles])` yang memverifikasi ulang status aktif (`is_active = TRUE`) dan role terbaru langsung dari PostgreSQL.
+3. **Lapis 3 — Isolasi Kepemilikan Data (*Ownership Guard*)**: Supplier hanya dapat mengakses PO dan pengiriman miliknya (`supplier_id = user.supplier_id`), sedangkan Staff hanya dapat mengubah/menghapus transaksi `Pending` buatannya sendiri (`created_by = user.id`).
 
 ---
 
