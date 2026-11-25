@@ -15,7 +15,7 @@ Gunakan daftar isi berikut untuk langsung menuju bagian yang dibutuhkan:
 | :---: | :--- | :--- |
 | 1 | [Tentang LOBEANS](#tentang-lobeans) | Gambaran umum aplikasi, latar belakang bisnis, dan tujuan sistem |
 | 2 | [Fitur Utama](#fitur-utama) | Daftar fitur inti, keamanan autentikasi, dan aturan stok atomik |
-| 3 | [Use Case Diagram](#use-case-diagram) | Diagram UML Use Case (Mermaid) & matriks aktivitas 5 aktor sistem |
+| 3 | [Flowchart Alur Sistem](#flowchart-alur-sistem) | Flowchart lengkap alur autentikasi, pengadaan PO, inspeksi, retur, dan transaksi IN/OUT |
 | 4 | [Entity Relationship Diagram](#entity-relationship-diagram) | Diagram ERD lengkap 17 tabel PostgreSQL + view `v_products` |
 | 5 | [Konfigurasi Parameter Terpusat](#konfigurasi-parameter-terpusat) | Pusat file konfigurasi untuk mengubah tampilan, animasi, dan aturan sistem |
 | 6 | [Teknologi](#teknologi) | Stack teknologi frontend, backend, database, dan keamanan |
@@ -59,106 +59,68 @@ Dalam bisnis kopi, kualitas seduhan sangat bergantung pada kesegaran biji, kesta
 
 ---
 
-## Use Case Diagram
+## Flowchart Alur Sistem
 
-Diagram berikut menggambarkan seluruh interaksi antara **5 aktor** (*Guest*, *Admin*, *Manager Gudang*, *Staff Gudang*, dan *Supplier*) dengan fitur-fitur utama pada sistem **LOBEANS**.
+Flowchart berikut menggambarkan alur operasional lengkap pada sistem **LOBEANS**, mulai dari autentikasi & pendaftaran supplier, siklus pengadaan (*Restock Order / PO*) beserta cabang pemeriksaan fisik (**Sesuai** vs **Tidak Sesuai / Retur**), hingga pengeluaran barang (**Barang Keluar / OUT**).
 
 ```mermaid
-flowchart LR
-    %% Daftar Aktor
-    GUEST(["👤 Guest / Pengunjung"])
-    ADMIN(["👤 Admin"])
-    MANAGER(["👤 Manager Gudang"])
-    STAFF(["👤 Staff Gudang"])
-    SUPPLIER(["👤 Supplier"])
+flowchart TD
+    START(["Mulai / Akses Aplikasi LOBEANS"]) --> AUTH_CHECK{"Sudah Punya Akun Aktif?"}
 
-    %% Batas Sistem LOBEANS
-    subgraph SYSTEM["Sistem LOBEANS — Coffee Inventory & Warehouse Management"]
-        direction TB
+    %% Cabang Registrasi Supplier
+    AUTH_CHECK -- "Belum (Mitra Supplier)" --> REG["Daftar Mandiri di /register + Unggah Dokumen Legalitas"]
+    REG --> VERIF_ADMIN{"Admin Verifikasi di /suppliers"}
+    VERIF_ADMIN -- "Ditolak + Alasan" --> REJECT_SUP(["Status: Rejected — Akun Nonaktif"])
+    VERIF_ADMIN -- "Disetujui" --> LOGIN["Login di /login (Verifikasi bcryptjs + JWT Cookie)"]
 
-        subgraph AUTH["Akses & Autentikasi"]
-            UC1(["Lihat Landing Page & Profil Origin"])
-            UC2(["Daftar Akun Mitra Supplier"])
-            UC3(["Login & Logout JWT Session"])
-            UC4(["Lihat Dashboard & Notifikasi"])
-        end
+    %% Cabang Login & Role Routing
+    AUTH_CHECK -- "Sudah" --> LOGIN
+    LOGIN --> ROLE{"Arahkan Berdasarkan Role (Middleware)"}
 
-        subgraph MASTER["Manajemen Akun & Master Data"]
-            UC5(["Kelola & Tambah Akun User"])
-            UC6(["Verifikasi Pendaftaran Supplier"])
-            UC7(["Kelola Kategori Kopi"])
-            UC8(["Kelola Katalog Produk & Barcode SKU"])
-            UC9(["Kelola Akun & Ubah Password Supplier"])
-        end
+    %% Alur Admin
+    ROLE -- "Admin" --> ADMIN_FLOW["Kelola Akun User, Verifikasi Supplier, Master Produk & Kategori, Laporan & Audit"]
 
-        subgraph SUPPLY["Pengadaan & Pemeriksaan Fisik"]
-            UC10(["Buat & Kelola Restock Order PO"])
-            UC11(["Konfirmasi / Tolak PO"])
-            UC12(["Kirim Barang & Unggah Bukti In Transit / Arrived"])
-            UC13(["Instruksikan Pemeriksaan Fisik"])
-            UC14(["Lakukan Pemeriksaan Fisik & Unggah Foto"])
-            UC15(["Tolak Penerimaan / Retur & Klaim Refund"])
-        end
+    %% Alur Pengadaan (PO -> Pengiriman -> Inspeksi -> IN / Retur)
+    ROLE -- "Manager Gudang" --> PO_CREATE["Buat Restock Order / PO (Status: Pending)"]
+    PO_CREATE --> SUP_DECIDE{"Supplier Konfirmasi PO"}
+    SUP_DECIDE -- "Tolak + Alasan" --> PO_REJECT(["PO Rejected — Alur Selesai"])
+    SUP_DECIDE -- "Konfirmasi" --> PO_CONF["PO Confirmed"]
+    PO_CONF --> SUP_SHIP["Supplier Kirim Barang + Foto Bukti Kirim (In Transit)"]
+    SUP_SHIP --> SUP_ARR["Supplier Lapor Tiba + Foto Kedatangan (Arrived)"]
+    SUP_ARR --> MGR_INST["Manager Instruksikan Pemeriksaan Fisik (Inspecting)"]
+    MGR_INST --> STAFF_INSP["Staff Periksa Fisik & Unggah Foto Bukti"]
+    STAFF_INSP --> INSP_RES{"Hasil Pemeriksaan Fisik?"}
 
-        subgraph TRX["Transaksi Stok & Pelaporan"]
-            UC16(["Ajukan Transaksi Barang Masuk IN"])
-            UC17(["Buat / Edit Transaksi Barang Keluar OUT"])
-            UC18(["Setujui / Tolak Transaksi IN & OUT"])
-            UC19(["Konfirmasi Kirim Barang Keluar Shipped"])
-            UC20(["Lihat Laporan, Audit Log & Ekspor CSV"])
-        end
-    end
+    %% Skenario 1: Sesuai -> Barang Masuk IN -> Stok +
+    INSP_RES -- "Sesuai" --> TRX_IN_CREATE["Staff Ajukan Transaksi Barang Masuk / IN (Pending)"]
+    TRX_IN_CREATE --> MGR_IN_DEC{"Manager Konfirmasi Barang Masuk (IN)"}
+    MGR_IN_DEC -- "Tolak + Alasan" --> IN_REJECT(["TRX-IN Rejected — Stok Tidak Berubah"])
+    MGR_IN_DEC -- "Setujui (Approved)" --> STOCK_ADD(["Stok Bertambah (+) Atomik + Catat Stock Movement + PO Received"])
 
-    %% Relasi Guest
-    GUEST --> UC1
-    GUEST --> UC2
-    GUEST --> UC3
+    %% Skenario 2: Tidak Sesuai -> Retur & Klaim Refund
+    INSP_RES -- "Tidak Sesuai / Rusak" --> MGR_RET["Manager Tolak Penerimaan & Ajukan Klaim Refund"]
+    MGR_RET --> PO_RET(["PO & Shipment Returned — Stok Tidak Berubah"])
 
-    %% Relasi Admin
-    ADMIN --> UC3
-    ADMIN --> UC4
-    ADMIN --> UC5
-    ADMIN --> UC6
-    ADMIN --> UC7
-    ADMIN --> UC8
-    ADMIN --> UC20
+    %% Alur Barang Keluar (OUT)
+    ROLE -- "Staff Gudang" --> OUT_CREATE["Staff Buat Transaksi Barang Keluar / OUT (Pending)"]
+    OUT_CREATE --> MGR_OUT_DEC{"Manager Konfirmasi Barang Keluar (OUT)"}
+    MGR_OUT_DEC -- "Tolak + Alasan" --> OUT_REJECT(["TRX-OUT Rejected — Stok Tidak Berubah"])
+    MGR_OUT_DEC -- "Setujui (Approved)" --> PACK["Staff Packing & Unggah Foto Bukti Pengiriman"]
+    PACK --> SHIPPED(["Klik Kirim Barang (Shipped) — Stok Berkurang (-) Atomik + Catat Stock Movement"])
 
-    %% Relasi Manager Gudang
-    MANAGER --> UC3
-    MANAGER --> UC4
-    MANAGER --> UC7
-    MANAGER --> UC8
-    MANAGER --> UC10
-    MANAGER --> UC13
-    MANAGER --> UC15
-    MANAGER --> UC18
-    MANAGER --> UC20
-
-    %% Relasi Staff Gudang
-    STAFF --> UC3
-    STAFF --> UC4
-    STAFF --> UC14
-    STAFF --> UC16
-    STAFF --> UC17
-    STAFF --> UC19
-
-    %% Relasi Supplier
-    SUPPLIER --> UC3
-    SUPPLIER --> UC4
-    SUPPLIER --> UC9
-    SUPPLIER --> UC11
-    SUPPLIER --> UC12
+    %% Alur Supplier Mandiri
+    ROLE -- "Supplier" --> SUP_PORTAL["Pantau PO, Pengiriman, Klaim Retur & Kelola Akun di /account"]
 ```
 
-### Matriks Use Case per Aktor
+### Ringkasan Tahapan Utama pada Flowchart
 
-| Aktor | Use Case Utama | Rute Utama |
+| Alur | Pelaku Utama | Perubahan Stok |
 | :--- | :--- | :--- |
-| **Guest / Pengunjung** | Melihat landing page bisnis & origin kopi Nusantara, mendaftar sebagai mitra supplier baru (dengan dokumen legalitas), dan login ke sistem. | `/`, `/register`, `/login` |
-| **Admin** | Menambah akun Staff/Manager/Supplier, mengaktifkan/menonaktifkan akun, menyetujui/menolak pendaftaran supplier baru, mengelola kategori & produk kopi, memantau laporan & audit trail, serta ekspor CSV. | `/dashboard`, `/users`, `/suppliers`, `/products`, `/categories`, `/reports` |
-| **Manager Gudang** | Mengelola kategori & produk kopi, membuat *Restock Order (PO)* ke supplier, menginstruksikan pemeriksaan fisik ke staff, menyetujui/menolak transaksi `IN` (menambah stok atomik) & `OUT`, memproses retur/refund barang tidak sesuai, serta ekspor CSV laporan. | `/dashboard`, `/supply-orders`, `/transactions/in`, `/transactions/out`, `/products`, `/categories`, `/reports` |
-| **Staff Gudang** | Melakukan pemeriksaan fisik barang tiba beserta foto bukti wajib, mengajukan transaksi Barang Masuk (`IN`) dari hasil inspeksi *Sesuai*, membuat/mengedit transaksi Barang Keluar (`OUT`) berstatus *Pending*, dan menyelesaikan pengiriman (`Shipped`, mengurangi stok atomik). | `/dashboard`, `/inspections`, `/transactions/in`, `/transactions/out`, `/products` |
-| **Supplier** | Melihat & mengonfirmasi/menolak PO dari Manager, mengirim barang (`In Transit`) & melaporkan kedatangan (`Arrived`) beserta foto bukti wajib, memantau status pengiriman & klaim retur, serta memperbarui profil usaha dan kata sandi mandiri. | `/dashboard`, `/supply-orders`, `/shipments`, `/account` |
+| **Registrasi & Verifikasi Supplier** | Guest → Admin | Tidak mengubah stok |
+| **Pengadaan PO (`Pending` → `Confirmed` → `In Transit` → `Arrived` → `Inspecting`)** | Manager → Supplier → Staff | Tidak mengubah stok |
+| **Barang Masuk `IN` (`Sesuai` → `Pending` → `Approved`)** | Staff → Manager | **Stok Bertambah (`+`)** atomik saat `Approved` + PO menjadi `Received` |
+| **Retur & Klaim Refund (`Tidak Sesuai` → `Returned`)** | Staff → Manager → Supplier | Tidak mengubah stok |
+| **Barang Keluar `OUT` (`Pending` → `Approved` → `Shipped`)** | Staff → Manager → Staff | **Stok Berkurang (`-`)** atomik saat `Shipped` |
 
 ---
 
@@ -225,6 +187,7 @@ erDiagram
         text reject_reason
         boolean is_active
         timestamptz created_at
+        timestamptz updated_at
     }
 
     users {
@@ -236,6 +199,7 @@ erDiagram
         text password_hash
         boolean is_active
         timestamptz created_at
+        timestamptz updated_at
     }
 
     categories {
@@ -244,6 +208,8 @@ erDiagram
         text description
         text image_url
         boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     products {
@@ -254,6 +220,7 @@ erDiagram
         varchar variety
         varchar process_method
         varchar origin_region
+        text description
         numeric buy_price
         numeric sell_price
         numeric min_stock
@@ -263,6 +230,8 @@ erDiagram
         varchar rack_location
         text image_url
         boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     supply_orders {
@@ -277,6 +246,8 @@ erDiagram
         int decision_by FK
         timestamptz decision_at
         text reject_reason
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     supply_order_items {
@@ -295,22 +266,30 @@ erDiagram
         varchar status
         text shipping_proof_url
         text arrival_proof_url
+        text notes
         timestamptz shipped_at
         timestamptz arrived_at
         int created_by FK
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     inspections {
         int id PK
         int shipment_id FK
         int instructed_by FK
+        timestamptz instructed_at
         int inspector_id FK
         varchar status
         varchar overall_result
         text notes
+        timestamptz submitted_at
         varchar manager_decision
         int decision_by FK
+        timestamptz decision_at
         text decision_notes
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     inspection_items {
@@ -320,6 +299,7 @@ erDiagram
         numeric ordered_qty
         numeric actual_qty
         varchar result
+        text notes
     }
 
     inspection_photos {
@@ -328,6 +308,7 @@ erDiagram
         text image_url
         text caption
         int uploaded_by FK
+        timestamptz created_at
     }
 
     returns {
@@ -338,8 +319,11 @@ erDiagram
         text instructions
         varchar status
         int initiated_by FK
-        int confirmed_by FK
         timestamptz returned_at
+        int confirmed_by FK
+        text notes
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     inventory_transactions {
@@ -353,12 +337,17 @@ erDiagram
         int supplier_id FK
         varchar recipient_name
         text destination
+        text notes
         text proof_image_url
         varchar status
         text reject_reason
         int created_by FK
         int approved_by FK
+        timestamptz decided_at
+        timestamptz shipped_at
         int shipped_by FK
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     inventory_transaction_items {
