@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { ActionForm, Field, Input, Select, SubmitButton, Textarea } from './ActionForm.js';
 import { ItemsEditor } from './ItemsEditor.js';
@@ -7,6 +8,8 @@ import { buttonClass } from './styles.js';
 
 export function SupplyOrderForm({ action, suppliers, products, today, nextWeek, defaultProductId = null, defaultQty = 25 }) {
   const initialItems = defaultProductId ? [{ product_id: Number(defaultProductId), quantity: defaultQty }] : undefined;
+  const [orderDate, setOrderDate] = useState(today);
+  const minExpectedDate = orderDate && orderDate >= today ? orderDate : today;
 
   return (
     <ActionForm action={action} className="space-y-5">
@@ -23,10 +26,17 @@ export function SupplyOrderForm({ action, suppliers, products, today, nextWeek, 
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Tanggal permintaan" name="order_date" required>
-          <Input name="order_date" type="date" defaultValue={today} required />
+          <Input
+            name="order_date"
+            type="date"
+            defaultValue={today}
+            min={today}
+            onChange={(e) => setOrderDate(e.target.value || today)}
+            required
+          />
         </Field>
         <Field label="Target tanggal tiba" name="expected_date" required>
-          <Input name="expected_date" type="date" defaultValue={nextWeek} required />
+          <Input name="expected_date" type="date" defaultValue={nextWeek} min={minExpectedDate} required />
         </Field>
       </div>
 

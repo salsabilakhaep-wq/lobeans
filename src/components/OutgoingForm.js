@@ -6,15 +6,18 @@ import { ItemsEditor } from './ItemsEditor.js';
 import { buttonClass } from './styles.js';
 
 export function OutgoingForm({ action, products, today, initial = {}, initialItems = null, isEdit = false }) {
-  const defaultDate = initial.trx_date
-    ? new Date(initial.trx_date).toISOString().slice(0, 10)
+  const rawInitialDate = initial.trx_date
+    ? typeof initial.trx_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(initial.trx_date)
+      ? initial.trx_date
+      : new Date(initial.trx_date).toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' })
     : today;
+  const defaultDate = rawInitialDate >= today ? rawInitialDate : today;
 
   return (
     <ActionForm action={action} className="space-y-5">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         <Field label="Tanggal pengiriman" name="trx_date" required>
-          <Input name="trx_date" type="date" defaultValue={defaultDate} required />
+          <Input name="trx_date" type="date" defaultValue={defaultDate} min={today} required />
         </Field>
         <Field label="Nama customer / penerima" name="recipient_name" required className="sm:col-span-2">
           <Input

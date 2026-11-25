@@ -58,6 +58,7 @@ export const APP_CONFIG = {
   security: {
     requireAuthForUploads: true,       // Wajib login untuk membuka file di /uploads/[file].
     protectCsvFormulaInjection: true,  // Cegah eksekusi rumus Excel (=, +, -, @) saat export CSV.
+    disallowPastDates: true,           // Tolak tanggal PO / transaksi IN / OUT yang berada sebelum hari ini.
     allowedDeleteSupplyRedirects: ['/supply-orders', '/dashboard'], // Daftar path redirect aman saat hapus PO.
   },
 };

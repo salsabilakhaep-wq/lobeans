@@ -2,7 +2,7 @@ import { APP_CONFIG } from '@/lib/appConfig.js';
 import { requireUser } from '@/lib/auth.js';
 import { many } from '@/lib/db.js';
 import { parsePositiveInt } from '@/lib/form.js';
-import { num } from '@/lib/format.js';
+import { addDaysISO, num, todayISO } from '@/lib/format.js';
 import { createSupplyOrderAction } from '@/app/actions/supply.js';
 import { SupplyOrderForm } from '@/components/SupplyOrderForm.js';
 import { Card, LinkButton, PageHeader } from '@/components/ui.js';
@@ -32,9 +32,8 @@ export default async function NewSupplyOrderPage({ searchParams }) {
 
   const selectedProduct = defaultProductId ? products.find((p) => p.id === defaultProductId) : null;
 
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const nextWeek = new Date(now.getTime() + APP_CONFIG.supplyOrder.defaultExpectedDays * 86400000).toISOString().slice(0, 10);
+  const today = todayISO();
+  const nextWeek = addDaysISO(today, APP_CONFIG.supplyOrder.defaultExpectedDays);
 
   return (
     <>

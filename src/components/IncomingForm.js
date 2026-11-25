@@ -55,7 +55,7 @@ export function IncomingForm({ action, eligibleInspections = [], defaultInspecti
           </select>
         </Field>
         <Field label="Tanggal pencatatan barang masuk" name="trx_date" required>
-          <Input name="trx_date" type="date" defaultValue={today} required />
+          <Input name="trx_date" type="date" defaultValue={today} min={today} required />
         </Field>
       </div>
 

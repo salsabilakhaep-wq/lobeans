@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { many, one } from '@/lib/db.js';
 import { parsePositiveInt } from '@/lib/form.js';
+import { todayISO } from '@/lib/format.js';
 import { updateOutgoingAction } from '@/app/actions/transactions.js';
 import { OutgoingForm } from '@/components/OutgoingForm.js';
 import { Card, LinkButton, PageHeader } from '@/components/ui.js';
@@ -30,7 +31,7 @@ export default async function EditOutgoingTransactionPage({ params }) {
   }
 
   const action = updateOutgoingAction.bind(null, trx.id);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   return (
     <>

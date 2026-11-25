@@ -42,6 +42,13 @@ export function todayISO() {
   return new Date().toLocaleDateString('en-CA', { timeZone: TZ });
 }
 
+// Tambah N hari dari string tanggal 'YYYY-MM-DD' tanpa pergeseran zona waktu
+export function addDaysISO(isoDate, days) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.toISOString().slice(0, 10);
+}
+
 export function isValidDate(s) {
   if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
   const [y, m, d] = s.split('-').map(Number);

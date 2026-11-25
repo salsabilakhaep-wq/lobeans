@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { APP_CONFIG } from './appConfig.js';
 import { PROCESS_METHODS, PRODUCT_UNITS } from './constants.js';
-import { isValidDate } from './format.js';
+import { isValidDate, todayISO } from './format.js';
 
 export function parse(schema, obj) {
   const result = schema.safeParse(obj);
@@ -49,7 +49,21 @@ const idField = (label) =>
     .transform(Number);
 
 const dateField = (label) =>
-  z.string().trim().min(1, `${label} wajib diisi`).refine(isValidDate, `${label} tidak valid`);
+  z
+    .string()
+    .trim()
+    .min(1, `${label} wajib diisi`)
+    .refine(isValidDate, `${label} tidak valid`)
+    .superRefine((v, ctx) => {
+      if (!APP_CONFIG.security.disallowPastDates) return;
+      const today = todayISO();
+      if (v < today) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `${label} tidak boleh sebelum tanggal hari ini (${today})`,
+        });
+      }
+    });
 
 const email = z
   .string()

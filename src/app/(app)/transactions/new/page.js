@@ -1,5 +1,6 @@
 import { requireUser } from '@/lib/auth.js';
 import { many } from '@/lib/db.js';
+import { todayISO } from '@/lib/format.js';
 import { createIncomingAction, createOutgoingAction } from '@/app/actions/transactions.js';
 import { IncomingForm } from '@/components/IncomingForm.js';
 import { OutgoingForm } from '@/components/OutgoingForm.js';
@@ -11,7 +12,7 @@ export default async function NewTransactionPage({ searchParams }) {
   await requireUser(['staff']);
   const sp = await searchParams;
   const isIncoming = String(sp?.type || '').toUpperCase() === 'IN';
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   if (isIncoming) {
     const rawInspections = await many(
@@ -88,7 +89,7 @@ export default async function NewTransactionPage({ searchParams }) {
       <PageHeader
         eyebrow="Pengeluaran Gudang"
         title="Buat Barang Keluar (OUT)"
-        subtitle="Ajukan pengeluaran green bean untuk pelanggan. Stok akan berkurang setelah disetujui oleh Manager Gudang."
+        subtitle="Ajukan pengeluaran green bean untuk pelanggan. Stok akan berkurang otomatis setelah disetujui Manager dan dikirim (Shipped)."
         action={
           <LinkButton href="/transactions/out" variant="secondary">
             ← Barang Keluar (OUT)
