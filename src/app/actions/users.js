@@ -48,10 +48,10 @@ export async function createUserAction(_prev, formData) {
           const supplierCode = `SUP-${String(codeRes.rows[0].next_num).padStart(3, '0')}`;
           try {
             const supIns = await client.query(
-              `INSERT INTO suppliers (supplier_code, company_name, contact_name, phone, email, address, document_url, verification_status, verified_by, verified_at, is_active)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, 'approved', $8, NOW(), TRUE)
+              `INSERT INTO suppliers (supplier_code, company_name, contact_name, phone, email, address, document_url, verification_status, is_active)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, 'approved', TRUE)
                RETURNING id`,
-              [supplierCode, d.company_name, d.name, d.phone, d.email, d.address, doc.url, actor.id],
+              [supplierCode, d.company_name, d.name, d.phone, d.email, d.address, doc.url],
             );
             supplierId = supIns.rows[0].id;
           } catch (err) {
