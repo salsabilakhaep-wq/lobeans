@@ -10,6 +10,7 @@ Seluruh file SQL disimpan secara terpisah di folder `database/` (di luar folder 
 |---|---|
 | `schema.sql` | Struktur lengkap **17 tabel**, indeks, constraint, sequence, serta view otomatis `v_products` (`Normal`, `Low`, `Severe`, `Out of Stock`). |
 | `seed.sql` | Data awal (*dummy data*) siap pakai: 4 role, 6 akun (password ter-hash `bcryptjs`), 3 supplier, 4 kategori kopi, 8 produk *green bean*, contoh PO/pengiriman/inspeksi, transaksi `IN`/`OUT`, riwayat stok, notifikasi, dan audit log. |
+| `demo_dummy.sql` | *(Opsional / Tambahan)* Data dummy demo presentasi yang bersifat *additive & idempotent* (tidak menghapus data lama): 2 supplier tambahan, 4 varietas produk baru, 7 PO lengkap di setiap tahap workflow, serta 3 transaksi `OUT` (`Pending`, `Approved`, `Shipped`). |
 
 ---
 
@@ -44,6 +45,8 @@ Jika Anda menggunakan terminal / Command Prompt dengan PostgreSQL CLI (`psql`):
 psql -U postgres -c "CREATE DATABASE lobeans_db;"
 psql -U postgres -d lobeans_db -f database/schema.sql
 psql -U postgres -d lobeans_db -f database/seed.sql
+# Opsional: tambah skenario dummy lengkap untuk demo presentasi
+psql -U postgres -d lobeans_db -f database/demo_dummy.sql
 ```
 
 ---
@@ -73,5 +76,7 @@ Setelah `database/seed.sql` dijalankan, Anda dapat login di `http://localhost:30
 | **Supplier 1** | Prabowo Susanto (Koperasi Gayo) | `supplier1@lobeans.test` | `Supplier123!` | Aktif (Terverifikasi) |
 | **Supplier 2** | Uzumaki Naruto (Kelompok Tani Toraja) | `supplier2@lobeans.test` | `Supplier123!` | Aktif (Terverifikasi) |
 | **Supplier 3** | Peter Parker (Koperasi Kintamani) | `supplier3@lobeans.test` | `Supplier123!` | Pending (Menunggu Verifikasi Admin) |
+| **Supplier 4** *(demo_dummy.sql)* | Raka Mahendra (Koperasi Flores Manggarai) | `supplier4@lobeans.test` | `Supplier123!` | Aktif (Terverifikasi) |
+| **Supplier 5** *(demo_dummy.sql)* | Nadia Lestari (Koperasi Ijen Raung) | `supplier5@lobeans.test` | `Supplier123!` | Pending (Menunggu Verifikasi Admin) |
 
 > **Catatan Keamanan:** Seluruh password di atas tersimpan di kolom `users.password_hash` dalam bentuk hash **`bcryptjs` (cost 10)**, bukan *plaintext*. Akun Supplier baru juga dapat didaftarkan langsung melalui halaman `/register` lalu diverifikasi oleh Admin.
