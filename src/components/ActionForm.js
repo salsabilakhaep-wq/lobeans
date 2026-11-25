@@ -128,16 +128,15 @@ export function ActionButton({
   className = '',
 }) {
   const [state, formAction, pending] = useActionState(action, {});
-  const [popupMessage, setPopupMessage] = useState('');
+  const [clientMessage, setClientMessage] = useState('');
+  const [dismissedState, setDismissedState] = useState(null);
   const dialogRef = useRef(null);
   const titleId = useId();
   const usePopup = Boolean(blockedMessage || alertOnError);
 
-  useEffect(() => {
-    if (usePopup && state?.message && !state.ok) {
-      setPopupMessage(state.message);
-    }
-  }, [state, usePopup]);
+  const serverMessage =
+    usePopup && state !== dismissedState && state?.message && !state.ok ? state.message : '';
+  const popupMessage = clientMessage || serverMessage;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -185,7 +184,7 @@ export function ActionButton({
           onClick={(e) => {
             if (blockedMessage) {
               e.preventDefault();
-              setPopupMessage(blockedMessage);
+              setClientMessage(blockedMessage);
               return;
             }
             if (confirm && !window.confirm(confirm)) e.preventDefault();
@@ -209,7 +208,8 @@ export function ActionButton({
           aria-labelledby={titleId}
           onClose={() => {
             if (dialogRef.current) dialogRef.current.returnValue = '';
-            setPopupMessage('');
+            setClientMessage('');
+            setDismissedState(state);
           }}
           className="m-auto w-[min(92vw,440px)] rounded-[18px] border border-red-200 bg-white p-0 text-left shadow-2xl"
         >
