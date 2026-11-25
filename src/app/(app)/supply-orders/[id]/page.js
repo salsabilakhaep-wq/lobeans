@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { many, one } from '@/lib/db.js';
+import { parsePositiveInt } from '@/lib/form.js';
 import { fmtDate, fmtDateTime, num } from '@/lib/format.js';
 import { SupplyOrderWorkflow } from '@/components/SupplyOrderWorkflow.js';
 import { ShipmentProofCards } from '@/components/ShipmentProofCards.js';
@@ -13,8 +14,8 @@ export default async function SupplyOrderDetailPage({ params, searchParams }) {
   const user = await requireUser(['admin', 'manager', 'staff', 'supplier']);
   const { id } = await params;
   const sp = await searchParams;
-  const orderId = Number(id);
-  if (!Number.isInteger(orderId) || orderId <= 0) notFound();
+  const orderId = parsePositiveInt(id);
+  if (!orderId) notFound();
 
   const order = await one(
     `SELECT so.*,

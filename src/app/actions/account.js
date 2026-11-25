@@ -2,12 +2,13 @@
 
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
+import { APP_CONFIG } from '@/lib/appConfig.js';
 import { withTransaction } from '@/lib/db.js';
 import { requireUser } from '@/lib/auth.js';
 import { logActivity } from '@/lib/audit.js';
 import { AppError } from '@/lib/errors.js';
 import { fail, formToObject, run, success } from '@/lib/form.js';
-import { saveImage } from '@/lib/upload.js';
+import { removeImage, saveImage } from '@/lib/upload.js';
 import { parse, supplierAccountProfileSchema, supplierChangePasswordSchema } from '@/lib/validation.js';
 
 export async function updateSupplierProfileAction(_prev, formData) {
@@ -17,51 +18,55 @@ export async function updateSupplierProfileAction(_prev, formData) {
   }
 
   const parsed = parse(supplierAccountProfileSchema, formToObject(formData));
+  if (!parsed.ok) {
+    return fail('Periksa kembali data profil dan usaha Anda.', parsed.errors, formData);
+  }
   const doc = await saveImage(formData.get('document'), { required: false });
-  if (!parsed.ok || doc.error) {
-    return fail(
-      doc.error || 'Periksa kembali data profil dan usaha Anda.',
-      { ...parsed.errors, ...(doc.error ? { document: doc.error } : {}) },
-      formData,
-    );
+  if (doc.error) {
+    return fail(doc.error, { document: doc.error }, formData);
   }
 
   const d = parsed.data;
   return run(async () => {
-    await withTransaction(async (client) => {
-      try {
-        await client.query(
-          `UPDATE users
-              SET name = $1, email = $2, updated_at = NOW()
-            WHERE id = $3`,
-          [d.contact_name, d.email, user.id],
-        );
-        await client.query(
-          `UPDATE suppliers
-              SET company_name = $1,
-                  contact_name = $2,
-                  phone = $3,
-                  email = $4,
-                  address = $5,
-                  document_url = COALESCE($6, document_url),
-                  updated_at = NOW()
-            WHERE id = $7`,
-          [d.company_name, d.contact_name, d.phone, d.email, d.address, doc.url, user.supplier_id],
-        );
-        await logActivity(client, {
-          actor: user,
-          action: 'update_supplier_profile',
-          entityType: 'supplier',
-          entityId: user.supplier_id,
-          summary: `${d.contact_name} memperbarui profil akun dan data usaha ${d.company_name}.`,
-        });
-      } catch (err) {
-        if (err.code === '23505') {
-          throw new AppError('Email tersebut sudah digunakan oleh akun lain.', 'email');
+    try {
+      await withTransaction(async (client) => {
+        try {
+          await client.query(
+            `UPDATE users
+                SET name = $1, email = $2, updated_at = NOW()
+              WHERE id = $3`,
+            [d.contact_name, d.email, user.id],
+          );
+          await client.query(
+            `UPDATE suppliers
+                SET company_name = $1,
+                    contact_name = $2,
+                    phone = $3,
+                    email = $4,
+                    address = $5,
+                    document_url = COALESCE($6, document_url),
+                    updated_at = NOW()
+              WHERE id = $7`,
+            [d.company_name, d.contact_name, d.phone, d.email, d.address, doc.url, user.supplier_id],
+          );
+          await logActivity(client, {
+            actor: user,
+            action: 'update_supplier_profile',
+            entityType: 'supplier',
+            entityId: user.supplier_id,
+            summary: `${d.contact_name} memperbarui profil akun dan data usaha ${d.company_name}.`,
+          });
+        } catch (err) {
+          if (err.code === '23505') {
+            throw new AppError('Email tersebut sudah digunakan oleh akun lain.', 'email');
+          }
+          throw err;
         }
-        throw err;
-      }
-    });
+      });
+    } catch (err) {
+      await removeImage(doc.url);
+      throw err;
+    }
 
     revalidatePath('/account');
     revalidatePath('/dashboard');
@@ -97,7 +102,7 @@ export async function changeSupplierPasswordAction(_prev, formData) {
         throw new AppError('Kata sandi saat ini tidak sesuai.', 'current_password');
       }
 
-      const nextHash = await bcrypt.hash(new_password, 10);
+      const nextHash = await bcrypt.hash(new_password, APP_CONFIG.auth.bcryptRounds);
       await client.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [nextHash, user.id]);
       await logActivity(client, {
         actor: user,

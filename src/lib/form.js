@@ -1,4 +1,34 @@
 import { AppError } from './errors.js';
+import { APP_CONFIG } from './appConfig.js';
+
+/**
+ * Validasi ID numerik agar selalu bilangan bulat positif dalam batas INT4 PostgreSQL.
+ * Mencegah error tipe data PostgreSQL (22P02 / 22003) akibat ID invalid atau terlalu besar.
+ */
+export function parsePositiveInt(value) {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value > 0 && value <= APP_CONFIG.limits.maxPgInt4 ? value : null;
+  }
+  const s = String(value ?? '').trim();
+  if (!/^\d+$/.test(s)) return null;
+  const n = Number(s);
+  return Number.isSafeInteger(n) && n > 0 && n <= APP_CONFIG.limits.maxPgInt4 ? n : null;
+}
+
+/**
+ * Validasi path redirect internal untuk mencegah celah Open Redirect.
+ * Hanya mengizinkan path relatif diawali satu "/" dan (opsional) terdaftar dalam allowlist.
+ */
+export function safeInternalPath(rawPath, allowedPaths = null) {
+  const s = String(rawPath ?? '').trim();
+  if (!s || !s.startsWith('/') || s.startsWith('//') || s.includes('\\') || /[\r\n]/.test(s)) {
+    return '';
+  }
+  if (Array.isArray(allowedPaths) && allowedPaths.length > 0 && !allowedPaths.includes(s)) {
+    return '';
+  }
+  return s;
+}
 
 export function formToObject(formData) {
   const obj = {};
@@ -50,16 +80,18 @@ export function parseItems(raw) {
     return { error: 'Data produk tidak valid.' };
   }
   if (!Array.isArray(arr) || arr.length === 0) return { error: 'Pilih minimal satu produk.' };
-  if (arr.length > 100) return { error: 'Maksimal 100 produk.' };
+  if (arr.length > APP_CONFIG.limits.maxItemsPerOrder) {
+    return { error: `Maksimal ${APP_CONFIG.limits.maxItemsPerOrder} produk.` };
+  }
 
   const seen = new Set();
   const items = [];
   for (const row of arr) {
-    const product_id = Number(row?.product_id);
+    const product_id = parsePositiveInt(row?.product_id);
     const quantity = Math.round(Number(row?.quantity) * 100) / 100;
-    if (!Number.isInteger(product_id) || product_id <= 0) return { error: 'Produk belum dipilih pada salah satu baris.' };
+    if (!product_id) return { error: 'Produk belum dipilih pada salah satu baris.' };
     if (Number.isNaN(quantity) || quantity <= 0) return { error: 'Kuantitas (kg) harus lebih dari 0.' };
-    if (quantity > 1_000_000) return { error: 'Kuantitas terlalu besar.' };
+    if (quantity > APP_CONFIG.limits.maxOrderQty) return { error: 'Kuantitas terlalu besar.' };
     if (seen.has(product_id)) return { error: 'Produk yang sama tidak boleh dipilih dua kali.' };
     seen.add(product_id);
     items.push({ product_id, quantity });

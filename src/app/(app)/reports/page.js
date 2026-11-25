@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { APP_CONFIG } from '@/lib/appConfig.js';
 import { requireUser } from '@/lib/auth.js';
 import { many } from '@/lib/db.js';
 import { ROLE_LABEL } from '@/lib/constants.js';
@@ -29,7 +30,8 @@ export default async function ReportsPage({ searchParams }) {
          JOIN products p ON p.id = sm.product_id
          JOIN inventory_transactions t ON t.id = sm.transaction_id
          JOIN users u ON u.id = sm.actor_id
-        ORDER BY sm.created_at DESC LIMIT 40`,
+        ORDER BY sm.created_at DESC LIMIT $1`,
+      [APP_CONFIG.pagination.reportMovementsLimit],
     ),
     many(
       `SELECT sh.id, sh.shipment_number, sh.attempt_number, sh.shipment_type, sh.status, sh.created_at,
@@ -40,12 +42,14 @@ export default async function ReportsPage({ searchParams }) {
          JOIN suppliers s ON s.id = so.supplier_id
          LEFT JOIN inspections i ON i.shipment_id = sh.id
          LEFT JOIN returns rt ON rt.shipment_id = sh.id
-        ORDER BY sh.created_at DESC LIMIT 30`,
+        ORDER BY sh.created_at DESC LIMIT $1`,
+      [APP_CONFIG.pagination.reportShipmentsLimit],
     ),
     many(
       `SELECT a.*, u.name AS actor_name
          FROM activity_logs a LEFT JOIN users u ON u.id = a.actor_id
-        ORDER BY a.created_at DESC LIMIT 40`,
+        ORDER BY a.created_at DESC LIMIT $1`,
+      [APP_CONFIG.pagination.reportLogsLimit],
     ),
   ]);
 

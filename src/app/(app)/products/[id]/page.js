@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { many, one } from '@/lib/db.js';
+import { parsePositiveInt } from '@/lib/form.js';
 import { fmtDateTime, num, rupiah } from '@/lib/format.js';
 import { SkuBarcode } from '@/components/SkuBarcode.js';
 import { Card, DataTable, LinkButton, PageHeader, StatusBadge, StockBadge, td } from '@/components/ui.js';
@@ -11,8 +12,8 @@ export const metadata = { title: 'Detail Produk' };
 export default async function ProductDetailPage({ params }) {
   const user = await requireUser(['admin', 'manager', 'staff']);
   const { id } = await params;
-  const numId = Number(id);
-  if (!Number.isInteger(numId) || numId <= 0) notFound();
+  const numId = parsePositiveInt(id);
+  if (!numId) notFound();
 
   const [product, history] = await Promise.all([
     one('SELECT * FROM v_products WHERE id = $1', [numId]),

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { many, one } from '@/lib/db.js';
+import { parsePositiveInt } from '@/lib/form.js';
 import { InspectionForm } from '@/components/InspectionForm.js';
 import { Card, LinkButton, PageHeader } from '@/components/ui.js';
 
@@ -9,8 +10,8 @@ export const metadata = { title: 'Form Pemeriksaan Fisik' };
 export default async function InspectionDetailPage({ params }) {
   await requireUser(['staff']);
   const { shipmentId } = await params;
-  const numId = Number(shipmentId);
-  if (!Number.isInteger(numId)) notFound();
+  const numId = parsePositiveInt(shipmentId);
+  if (!numId) notFound();
 
   const shipment = await one(
     `SELECT sh.*, so.order_number, s.company_name AS supplier_name, i.status AS insp_status, i.notes AS instruction_notes

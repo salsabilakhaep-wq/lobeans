@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
-import { fail, formToObject, parseItems, run } from '@/lib/form.js';
-import { saveImage } from '@/lib/upload.js';
+import { fail, formToObject, parseItems, parsePositiveInt, run } from '@/lib/form.js';
+import { removeImage, saveImage } from '@/lib/upload.js';
 import { incomingSchema, outgoingSchema, parse, reasonSchema } from '@/lib/validation.js';
 import {
   createIncomingTransaction,
@@ -52,6 +52,8 @@ export async function createOutgoingAction(_prev, formData) {
 
 export async function updateOutgoingAction(id, _prev, formData) {
   const user = await requireUser(['staff']);
+  const trxId = parsePositiveInt(id);
+  if (!trxId) return fail('ID transaksi tidak valid.', {}, formData);
   const parsed = parse(outgoingSchema, formToObject(formData));
   const { items, error: itemsErr } = parseItems(formData.get('items'));
   if (!parsed.ok || itemsErr) {
@@ -62,17 +64,18 @@ export async function updateOutgoingAction(id, _prev, formData) {
     );
   }
   return run(async () => {
-    await updateOutgoingTransaction(user, Number(id), { ...parsed.data, items });
+    await updateOutgoingTransaction(user, trxId, { ...parsed.data, items });
     revalidatePath('/transactions/out');
-    revalidatePath(`/transactions/${id}`);
+    revalidatePath(`/transactions/${trxId}`);
     revalidatePath('/dashboard');
-    redirect(`/transactions/${id}?ok=` + encodeURIComponent('Perubahan transaksi Pending berhasil disimpan.'));
+    redirect(`/transactions/${trxId}?ok=` + encodeURIComponent('Perubahan transaksi Pending berhasil disimpan.'));
   }, formData);
 }
 
 export async function approveTransactionAction(_prev, formData) {
   const user = await requireUser(['manager']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID transaksi tidak valid.');
   const type = String(formData.get('type') || '');
   return run(async () => {
     await decideTransaction(user, id, 'approve');
@@ -95,7 +98,8 @@ export async function approveTransactionAction(_prev, formData) {
 
 export async function rejectTransactionAction(_prev, formData) {
   const user = await requireUser(['manager']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID transaksi tidak valid.', {}, formData);
   const parsed = parse(reasonSchema, formToObject(formData));
   if (!parsed.ok) return fail(parsed.errors.reason, parsed.errors, formData);
   return run(async () => {
@@ -111,11 +115,17 @@ export async function rejectTransactionAction(_prev, formData) {
 
 export async function shipOutgoingAction(_prev, formData) {
   const user = await requireUser(['staff']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID transaksi tidak valid.', {}, formData);
   const img = await saveImage(formData.get('proof_image'), { required: true });
   if (img.error) return fail('Foto bukti pengiriman wajib diunggah untuk mengubah status ke Shipped.', { proof_image: img.error }, formData);
   return run(async () => {
-    await shipOutgoingTransaction(user, id, img.url);
+    try {
+      await shipOutgoingTransaction(user, id, img.url);
+    } catch (err) {
+      await removeImage(img.url);
+      throw err;
+    }
     revalidatePath('/transactions/out');
     revalidatePath(`/transactions/${id}`);
     revalidatePath('/products');
@@ -127,7 +137,8 @@ export async function shipOutgoingAction(_prev, formData) {
 
 export async function deletePendingTransactionAction(_prev, formData) {
   const user = await requireUser(['staff', 'manager']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID transaksi tidak valid.');
   return run(async () => {
     const type = await deletePendingTransaction(user, id);
     revalidatePath('/transactions/in');

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { APP_CONFIG } from './appConfig.js';
 import { PROCESS_METHODS, PRODUCT_UNITS } from './constants.js';
 import { isValidDate } from './format.js';
 
@@ -30,7 +31,7 @@ const decimal = (label, { min = 0 } = {}) =>
       const n = Number(v);
       if (Number.isNaN(n)) ctx.addIssue({ code: 'custom', message: `${label} harus berupa angka` });
       else if (n < min) ctx.addIssue({ code: 'custom', message: `${label} minimal ${min}` });
-      else if (n > 1_000_000_000_000) ctx.addIssue({ code: 'custom', message: `${label} terlalu besar` });
+      else if (n > APP_CONFIG.limits.maxDecimalValue) ctx.addIssue({ code: 'custom', message: `${label} terlalu besar` });
     })
     .transform((v) => Math.round(Number(v) * 100) / 100);
 
@@ -40,7 +41,10 @@ const idField = (label) =>
     .trim()
     .min(1, `${label} wajib dipilih`)
     .superRefine((v, ctx) => {
-      if (!/^\d+$/.test(v)) ctx.addIssue({ code: 'custom', message: `${label} tidak valid` });
+      const n = Number(v);
+      if (!/^\d+$/.test(v) || !Number.isSafeInteger(n) || n <= 0 || n > APP_CONFIG.limits.maxPgInt4) {
+        ctx.addIssue({ code: 'custom', message: `${label} tidak valid` });
+      }
     })
     .transform(Number);
 
@@ -55,7 +59,10 @@ const email = z
   .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Format email tidak valid')
   .transform((v) => v.toLowerCase());
 
-const password = z.string().min(8, 'Kata sandi minimal 8 karakter').max(72, 'Kata sandi maksimal 72 karakter');
+const password = z
+  .string()
+  .min(APP_CONFIG.auth.minPasswordLength, `Kata sandi minimal ${APP_CONFIG.auth.minPasswordLength} karakter`)
+  .max(APP_CONFIG.auth.maxPasswordLength, `Kata sandi maksimal ${APP_CONFIG.auth.maxPasswordLength} karakter`);
 
 // ---------------------------------------------------------------- Auth
 export const loginSchema = z.object({
@@ -122,7 +129,10 @@ export const userUpdateSchema = z.object({
     .string()
     .optional()
     .default('')
-    .refine((v) => v === '' || (v.length >= 8 && v.length <= 72), 'Kata sandi baru minimal 8 karakter'),
+    .refine(
+      (v) => v === '' || (v.length >= APP_CONFIG.auth.minPasswordLength && v.length <= APP_CONFIG.auth.maxPasswordLength),
+      `Kata sandi baru minimal ${APP_CONFIG.auth.minPasswordLength} karakter`,
+    ),
 });
 
 // ---------------------------------------------------------------- Suppliers (Admin)

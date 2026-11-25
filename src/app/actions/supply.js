@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { APP_CONFIG } from '@/lib/appConfig.js';
 import { requireUser } from '@/lib/auth.js';
-import { fail, formToObject, parseItems, run, success } from '@/lib/form.js';
-import { saveImage } from '@/lib/upload.js';
+import { fail, formToObject, parseItems, parsePositiveInt, run, safeInternalPath, success } from '@/lib/form.js';
+import { removeImage, saveImage } from '@/lib/upload.js';
 import { parse, reasonSchema, supplyOrderSchema } from '@/lib/validation.js';
 import {
   createSupplyOrder,
@@ -34,7 +35,8 @@ export async function createSupplyOrderAction(_prev, formData) {
 
 export async function confirmSupplyOrderAction(_prev, formData) {
   const user = await requireUser(['supplier']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID pesanan pasokan tidak valid.');
   return run(async () => {
     await decideSupplyOrder(user, id, 'confirm');
     revalidatePath('/supply-orders');
@@ -47,7 +49,8 @@ export async function confirmSupplyOrderAction(_prev, formData) {
 
 export async function rejectSupplyOrderAction(_prev, formData) {
   const user = await requireUser(['supplier']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID pesanan pasokan tidak valid.', {}, formData);
   const parsed = parse(reasonSchema, formToObject(formData));
   if (!parsed.ok) return fail(parsed.errors.reason, parsed.errors, formData);
   return run(async () => {
@@ -61,7 +64,8 @@ export async function rejectSupplyOrderAction(_prev, formData) {
 
 export async function dispatchSupplyOrderAction(_prev, formData) {
   const user = await requireUser(['supplier']);
-  const orderId = Number(formData.get('supply_order_id'));
+  const orderId = parsePositiveInt(formData.get('supply_order_id'));
+  if (!orderId) return fail('ID pesanan pasokan tidak valid.', {}, formData);
   const notes = String(formData.get('notes') || '');
 
   const img = await saveImage(formData.get('proof_image'), { required: true });
@@ -70,7 +74,12 @@ export async function dispatchSupplyOrderAction(_prev, formData) {
   }
 
   return run(async () => {
-    await dispatchSupplyOrder(user, orderId, img.url, notes);
+    try {
+      await dispatchSupplyOrder(user, orderId, img.url, notes);
+    } catch (err) {
+      await removeImage(img.url);
+      throw err;
+    }
     revalidatePath('/supply-orders');
     revalidatePath(`/supply-orders/${orderId}`);
     revalidatePath('/shipments');
@@ -81,8 +90,9 @@ export async function dispatchSupplyOrderAction(_prev, formData) {
 
 export async function markArrivedAction(_prev, formData) {
   const user = await requireUser(['supplier']);
-  const shipmentId = Number(formData.get('shipment_id'));
-  const orderId = Number(formData.get('supply_order_id'));
+  const shipmentId = parsePositiveInt(formData.get('shipment_id'));
+  const orderId = parsePositiveInt(formData.get('supply_order_id'));
+  if (!shipmentId || !orderId) return fail('ID pengiriman tidak valid.', {}, formData);
   const notes = String(formData.get('notes') || '');
 
   const img = await saveImage(formData.get('proof_image'), { required: true });
@@ -91,7 +101,12 @@ export async function markArrivedAction(_prev, formData) {
   }
 
   return run(async () => {
-    await markShipmentArrived(user, shipmentId, img.url, notes);
+    try {
+      await markShipmentArrived(user, shipmentId, img.url, notes);
+    } catch (err) {
+      await removeImage(img.url);
+      throw err;
+    }
     revalidatePath('/supply-orders');
     revalidatePath(`/supply-orders/${orderId}`);
     revalidatePath('/shipments');
@@ -102,8 +117,9 @@ export async function markArrivedAction(_prev, formData) {
 
 export async function instructInspectionAction(_prev, formData) {
   const user = await requireUser(['manager']);
-  const shipmentId = Number(formData.get('shipment_id'));
-  const orderId = Number(formData.get('supply_order_id'));
+  const shipmentId = parsePositiveInt(formData.get('shipment_id'));
+  const orderId = parsePositiveInt(formData.get('supply_order_id'));
+  if (!shipmentId || !orderId) return fail('ID pengiriman tidak valid.', {}, formData);
   const notes = String(formData.get('notes') || '');
   return run(async () => {
     await instructInspection(user, shipmentId, notes);
@@ -118,8 +134,9 @@ export async function instructInspectionAction(_prev, formData) {
 
 export async function submitInspectionAction(_prev, formData) {
   const user = await requireUser(['staff']);
-  const shipmentId = Number(formData.get('shipment_id'));
-  const orderId = Number(formData.get('supply_order_id'));
+  const shipmentId = parsePositiveInt(formData.get('shipment_id'));
+  const orderId = parsePositiveInt(formData.get('supply_order_id'));
+  if (!shipmentId || !orderId) return fail('ID pengiriman tidak valid.', {}, formData);
   const notes = String(formData.get('notes') || '').trim();
   const photoCaption = String(formData.get('photo_caption') || '');
 
@@ -138,7 +155,13 @@ export async function submitInspectionAction(_prev, formData) {
   if (img.error) return fail('Foto bukti pemeriksaan wajib diunggah.', { photo: img.error }, formData);
 
   return run(async () => {
-    const res = await submitInspection(user, shipmentId, { items, notes, photoUrl: img.url, photoCaption });
+    let res;
+    try {
+      res = await submitInspection(user, shipmentId, { items, notes, photoUrl: img.url, photoCaption });
+    } catch (err) {
+      await removeImage(img.url);
+      throw err;
+    }
     revalidatePath('/inspections');
     revalidatePath(`/inspections/${shipmentId}`);
     revalidatePath(`/supply-orders/${orderId}`);
@@ -160,8 +183,9 @@ export async function submitInspectionAction(_prev, formData) {
 
 export async function returnSupplyOrderAction(_prev, formData) {
   const user = await requireUser(['manager']);
-  const inspectionId = Number(formData.get('inspection_id'));
-  const orderId = Number(formData.get('supply_order_id'));
+  const inspectionId = parsePositiveInt(formData.get('inspection_id'));
+  const orderId = parsePositiveInt(formData.get('supply_order_id'));
+  if (!inspectionId || !orderId) return fail('ID pemeriksaan tidak valid.', {}, formData);
   const reason = String(formData.get('decision_notes') || '');
   const instructions = String(formData.get('return_instructions') || '');
 
@@ -179,8 +203,12 @@ export async function returnSupplyOrderAction(_prev, formData) {
 
 export async function deleteSupplyOrderAction(_prev, formData) {
   const user = await requireUser(['manager']);
-  const id = Number(formData.get('id'));
-  const redirectTo = String(formData.get('redirect_to') || '');
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID pesanan pasokan tidak valid.');
+  const redirectTo = safeInternalPath(
+    formData.get('redirect_to'),
+    APP_CONFIG.security.allowedDeleteSupplyRedirects,
+  );
   return run(async () => {
     const orderNumber = await deletePendingSupplyOrder(user, id);
     revalidatePath('/supply-orders');

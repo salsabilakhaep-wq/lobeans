@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { one } from '@/lib/db.js';
+import { parsePositiveInt } from '@/lib/form.js';
 import { updateUserAction } from '@/app/actions/users.js';
 import { UserForm } from '@/components/UserForm.js';
 import { Card, PageHeader } from '@/components/ui.js';
@@ -10,8 +11,8 @@ export const metadata = { title: 'Ubah Pengguna' };
 export default async function EditUserPage({ params }) {
   await requireUser(['admin']);
   const { id } = await params;
-  const numId = Number(id);
-  if (!Number.isInteger(numId)) notFound();
+  const numId = parsePositiveInt(id);
+  if (!numId) notFound();
 
   const user = await one(
     `SELECT u.id, u.name, u.email, u.is_active, r.code AS role

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { APP_CONFIG } from '@/lib/appConfig.js';
 import { requireUser } from '@/lib/auth.js';
 import { many } from '@/lib/db.js';
 import { num, rupiah } from '@/lib/format.js';
@@ -9,7 +10,7 @@ import { Flash, LinkButton, PageHeader, StatusBadge, StockBadge } from '@/compon
 
 export const metadata = { title: 'Kelola Produk' };
 
-const PER_PAGE = 8;
+const PER_PAGE = APP_CONFIG.pagination.productsPerPage;
 
 export default async function ProductsPage({ searchParams }) {
   const user = await requireUser(['admin', 'manager', 'staff']);

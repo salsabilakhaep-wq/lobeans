@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { many, one } from '@/lib/db.js';
+import { parsePositiveInt } from '@/lib/form.js';
 import { fmtDate, fmtDateTime, num } from '@/lib/format.js';
 import { TransactionDecisionPanel } from '@/components/TransactionDecisionPanel.js';
 import { Card, DataTable, Flash, LinkButton, PageHeader, StatusBadge, td } from '@/components/ui.js';
@@ -12,8 +13,8 @@ export default async function TransactionDetailPage({ params, searchParams }) {
   const user = await requireUser(['admin', 'manager', 'staff']);
   const { id } = await params;
   const sp = await searchParams;
-  const numId = Number(id);
-  if (!Number.isInteger(numId)) notFound();
+  const numId = parsePositiveInt(id);
+  if (!numId) notFound();
 
   const trx = await one(
     `SELECT t.*, u.name AS creator_name, a.name AS approver_name, sh_u.name AS shipper_name,

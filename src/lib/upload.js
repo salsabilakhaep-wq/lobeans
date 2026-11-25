@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
+import { APP_CONFIG } from './appConfig.js';
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), 'uploads');
-const MAX_BYTES = 2 * 1024 * 1024;
+const MAX_BYTES = APP_CONFIG.upload.maxSizeMb * 1024 * 1024;
 const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
 
 function sniff(buf) {
@@ -20,12 +21,15 @@ export async function saveImage(file, { required = false, fallbackUrl = null } =
     if (fallbackUrl) return { url: fallbackUrl };
     return required ? { error: 'Foto dokumentasi wajib diunggah' } : { url: null };
   }
-  if (file.size > MAX_BYTES) return { error: 'Ukuran gambar maksimal 2 MB' };
+  if (file.size > MAX_BYTES) return { error: `Ukuran gambar maksimal ${APP_CONFIG.upload.maxSizeMb} MB` };
   const buf = Buffer.from(await file.arrayBuffer());
   const mime = sniff(buf);
-  if (!mime || !EXT[mime]) return { error: 'Format gambar harus JPG, PNG, WEBP, atau GIF' };
+  const ext = mime ? EXT[mime] : null;
+  if (!ext || !APP_CONFIG.upload.allowedExtensions.includes(ext)) {
+    return { error: `Format gambar harus ${APP_CONFIG.upload.allowedExtensions.join(', ').toUpperCase()}` };
+  }
   await mkdir(UPLOAD_DIR, { recursive: true });
-  const name = `${randomUUID()}.${EXT[mime]}`;
+  const name = `${randomUUID()}.${ext}`;
   await writeFile(path.join(/*turbopackIgnore: true*/ UPLOAD_DIR, name), buf);
   return { url: `/uploads/${name}` };
 }

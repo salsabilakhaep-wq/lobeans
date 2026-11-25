@@ -6,8 +6,8 @@ import { withTransaction } from '@/lib/db.js';
 import { requireUser } from '@/lib/auth.js';
 import { logActivity } from '@/lib/audit.js';
 import { AppError } from '@/lib/errors.js';
-import { fail, formToObject, run, success } from '@/lib/form.js';
-import { saveImage } from '@/lib/upload.js';
+import { fail, formToObject, parsePositiveInt, run, success } from '@/lib/form.js';
+import { removeImage, saveImage } from '@/lib/upload.js';
 import { parse, reasonSchema, supplierSchema } from '@/lib/validation.js';
 
 const done = (msg) => redirect('/suppliers?ok=' + encodeURIComponent(msg));
@@ -15,36 +15,39 @@ const done = (msg) => redirect('/suppliers?ok=' + encodeURIComponent(msg));
 export async function createSupplierAction(_prev, formData) {
   const actor = await requireUser(['admin']);
   const parsed = parse(supplierSchema, formToObject(formData));
+  if (!parsed.ok) {
+    return fail('Periksa kembali data supplier.', parsed.errors, formData);
+  }
   const img = await saveImage(formData.get('document'), { required: true });
-  if (!parsed.ok || img.error) {
-    const docErr = img.error ? 'Dokumen verifikasi supplier wajib diunggah.' : undefined;
-    return fail(
-      docErr || 'Periksa kembali data supplier.',
-      { ...parsed.errors, ...(docErr ? { document: docErr } : {}) },
-      formData,
-    );
+  if (img.error) {
+    return fail('Dokumen verifikasi supplier wajib diunggah.', { document: 'Dokumen verifikasi supplier wajib diunggah.' }, formData);
   }
   const d = parsed.data;
   return run(async () => {
-    await withTransaction(async (client) => {
-      try {
-        const ins = await client.query(
-          `INSERT INTO suppliers (supplier_code, company_name, contact_name, phone, email, address, document_url, verification_status, is_active)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'approved',TRUE) RETURNING id`,
-          [d.supplier_code, d.company_name, d.contact_name, d.phone, d.email, d.address, img.url],
-        );
-        await logActivity(client, {
-          actor,
-          action: 'create_supplier',
-          entityType: 'supplier',
-          entityId: ins.rows[0].id,
-          summary: `Admin menambahkan profil Supplier ${d.company_name} (${d.supplier_code}).`,
-        });
-      } catch (err) {
-        if (err.code === '23505') throw new AppError('Kode supplier sudah dipakai.', 'supplier_code');
-        throw err;
-      }
-    });
+    try {
+      await withTransaction(async (client) => {
+        try {
+          const ins = await client.query(
+            `INSERT INTO suppliers (supplier_code, company_name, contact_name, phone, email, address, document_url, verification_status, is_active)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,'approved',TRUE) RETURNING id`,
+            [d.supplier_code, d.company_name, d.contact_name, d.phone, d.email, d.address, img.url],
+          );
+          await logActivity(client, {
+            actor,
+            action: 'create_supplier',
+            entityType: 'supplier',
+            entityId: ins.rows[0].id,
+            summary: `Admin menambahkan profil Supplier ${d.company_name} (${d.supplier_code}).`,
+          });
+        } catch (err) {
+          if (err.code === '23505') throw new AppError('Kode supplier sudah dipakai.', 'supplier_code');
+          throw err;
+        }
+      });
+    } catch (err) {
+      await removeImage(img.url);
+      throw err;
+    }
     revalidatePath('/suppliers');
     revalidatePath('/dashboard');
     done(`Supplier ${d.company_name} berhasil ditambahkan.`);
@@ -53,35 +56,45 @@ export async function createSupplierAction(_prev, formData) {
 
 export async function updateSupplierAction(id, _prev, formData) {
   const actor = await requireUser(['admin']);
+  const supplierId = parsePositiveInt(id);
+  if (!supplierId) return fail('ID supplier tidak valid.', {}, formData);
   const parsed = parse(supplierSchema, formToObject(formData));
+  if (!parsed.ok) {
+    return fail('Periksa kembali data supplier.', parsed.errors, formData);
+  }
   const img = await saveImage(formData.get('document'), { required: false });
-  if (!parsed.ok || img.error) {
-    return fail(img.error || 'Periksa kembali data supplier.', { ...parsed.errors, ...(img.error ? { document: img.error } : {}) }, formData);
+  if (img.error) {
+    return fail(img.error, { document: img.error }, formData);
   }
   const d = parsed.data;
   return run(async () => {
-    await withTransaction(async (client) => {
-      try {
-        const res = await client.query(
-          `UPDATE suppliers
-              SET supplier_code=$1, company_name=$2, contact_name=$3, phone=$4, email=$5, address=$6,
-                  document_url=COALESCE($7, document_url), updated_at=NOW()
-            WHERE id=$8`,
-          [d.supplier_code, d.company_name, d.contact_name, d.phone, d.email, d.address, img.url, id],
-        );
-        if (res.rowCount === 0) throw new AppError('Supplier tidak ditemukan.');
-        await logActivity(client, {
-          actor,
-          action: 'update_supplier',
-          entityType: 'supplier',
-          entityId: Number(id),
-          summary: `Admin memperbarui profil Supplier ${d.company_name}.`,
-        });
-      } catch (err) {
-        if (err.code === '23505') throw new AppError('Kode supplier sudah dipakai.', 'supplier_code');
-        throw err;
-      }
-    });
+    try {
+      await withTransaction(async (client) => {
+        try {
+          const res = await client.query(
+            `UPDATE suppliers
+                SET supplier_code=$1, company_name=$2, contact_name=$3, phone=$4, email=$5, address=$6,
+                    document_url=COALESCE($7, document_url), updated_at=NOW()
+              WHERE id=$8`,
+            [d.supplier_code, d.company_name, d.contact_name, d.phone, d.email, d.address, img.url, supplierId],
+          );
+          if (res.rowCount === 0) throw new AppError('Supplier tidak ditemukan.');
+          await logActivity(client, {
+            actor,
+            action: 'update_supplier',
+            entityType: 'supplier',
+            entityId: supplierId,
+            summary: `Admin memperbarui profil Supplier ${d.company_name}.`,
+          });
+        } catch (err) {
+          if (err.code === '23505') throw new AppError('Kode supplier sudah dipakai.', 'supplier_code');
+          throw err;
+        }
+      });
+    } catch (err) {
+      await removeImage(img.url);
+      throw err;
+    }
     revalidatePath('/suppliers');
     done('Data supplier berhasil diperbarui.');
   }, formData);
@@ -89,7 +102,8 @@ export async function updateSupplierAction(id, _prev, formData) {
 
 export async function approveSupplierAction(_prev, formData) {
   const actor = await requireUser(['admin']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID supplier tidak valid.');
   return run(async () => {
     await withTransaction(async (client) => {
       const res = await client.query(
@@ -117,7 +131,8 @@ export async function approveSupplierAction(_prev, formData) {
 
 export async function rejectSupplierAction(_prev, formData) {
   const actor = await requireUser(['admin']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID supplier tidak valid.', {}, formData);
   const parsed = parse(reasonSchema, formToObject(formData));
   if (!parsed.ok) return fail(parsed.errors.reason, parsed.errors, formData);
   return run(async () => {
@@ -147,7 +162,8 @@ export async function rejectSupplierAction(_prev, formData) {
 
 export async function toggleSupplierActiveAction(_prev, formData) {
   const actor = await requireUser(['admin']);
-  const id = Number(formData.get('id'));
+  const id = parsePositiveInt(formData.get('id'));
+  if (!id) return fail('ID supplier tidak valid.');
   const nextActive = formData.get('next_active') === 'true';
   return run(async () => {
     await withTransaction(async (client) => {

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { many, one } from '@/lib/db.js';
+import { parsePositiveInt } from '@/lib/form.js';
 import { updateOutgoingAction } from '@/app/actions/transactions.js';
 import { OutgoingForm } from '@/components/OutgoingForm.js';
 import { Card, LinkButton, PageHeader } from '@/components/ui.js';
@@ -10,8 +11,8 @@ export const metadata = { title: 'Ubah Transaksi Pending' };
 export default async function EditOutgoingTransactionPage({ params }) {
   const user = await requireUser(['staff']);
   const { id } = await params;
-  const numId = Number(id);
-  if (!Number.isInteger(numId)) notFound();
+  const numId = parsePositiveInt(id);
+  if (!numId) notFound();
 
   const [trx, items, products] = await Promise.all([
     one('SELECT * FROM inventory_transactions WHERE id = $1', [numId]),

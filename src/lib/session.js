@@ -1,11 +1,19 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { APP_CONFIG } from './appConfig.js';
 
-const COOKIE = 'lobeans_session';
-const MAX_AGE = 60 * 60 * 8;
+const COOKIE = APP_CONFIG.auth.cookieName;
+const MAX_AGE = 60 * 60 * APP_CONFIG.auth.sessionHours;
 
 function secretKey() {
-  const secret = process.env.AUTH_SECRET || 'dev-only-secret-change-me-please-32chars!';
+  const envSecret = process.env.AUTH_SECRET?.trim();
+  if (process.env.NODE_ENV === 'production') {
+    if (!envSecret || envSecret.length < APP_CONFIG.auth.minSecretLength) {
+      throw new Error(`AUTH_SECRET wajib diisi minimal ${APP_CONFIG.auth.minSecretLength} karakter pada mode production.`);
+    }
+    return new TextEncoder().encode(envSecret);
+  }
+  const secret = envSecret || APP_CONFIG.auth.devFallbackSecret;
   return new TextEncoder().encode(secret);
 }
 

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth.js';
 import { one } from '@/lib/db.js';
+import { parsePositiveInt } from '@/lib/form.js';
 import { updateCategoryAction } from '@/app/actions/categories.js';
 import { CategoryForm } from '@/components/CategoryForm.js';
 import { Card, PageHeader } from '@/components/ui.js';
@@ -10,8 +11,8 @@ export const metadata = { title: 'Ubah Kategori' };
 export default async function EditCategoryPage({ params }) {
   await requireUser(['admin', 'manager']);
   const { id } = await params;
-  const numId = Number(id);
-  if (!Number.isInteger(numId)) notFound();
+  const numId = parsePositiveInt(id);
+  if (!numId) notFound();
 
   const cat = await one('SELECT * FROM categories WHERE id = $1', [numId]);
   if (!cat) notFound();

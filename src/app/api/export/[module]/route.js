@@ -130,8 +130,11 @@ export async function GET(_req, { params }) {
   if (!user) return new NextResponse('Unauthorized', { status: 401 });
 
   const { module } = await params;
+  if (!Object.hasOwn(MODULES, module)) {
+    return new NextResponse('Not Found', { status: 404 });
+  }
   const spec = MODULES[module];
-  if (!spec || !spec.roles.includes(user.role)) {
+  if (!spec.roles.includes(user.role)) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 
